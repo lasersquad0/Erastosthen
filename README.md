@@ -41,10 +41,14 @@ To specify file format use numbers 1..5 rights after mode sylbol ('c' or 's').
 ## Start and Length
 Second and third arguments define START and LENGTH parameters of generating primes.
 You can use factor modificators to make it more convenient to define range.
-B - bytes\n
+B - bytes
+
 M - megabytes
+
 G - gigabytes
+
 T - terabytes
+
 P - petabytes
 
 
