@@ -7,7 +7,7 @@ There can be up to three command line arguments.
 Only the first argument is mandatory, while two others can be omited.
 If argument is omitted than default hardcoded value is used for that parameter.
 
-First command line argument consists of two symbold.
+First command line argument consists of two symbols.
 First symbol defines prime numbers generation mode, second symbol defines type of output file where primes numbers will be stored.
 
 ## Generation mode
