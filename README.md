@@ -30,8 +30,8 @@ It becomes especially important is you need to generate big primes number and in
 - **.bin** - numbers are stored in binary format. Each number takes exacly 8 bytes (long long in C++). to work with this format you probably need to write your code to read this format. This is easy. 
 Please pay attention that some other programming languages and/or platforms may use other sequence of bytes when save/read binary integers from file. 
 - **.bindiff** - idea is the same as .txtdiff but in binry format. 2 bytes (short C++ type) are used for saving diff values. It make bindiff file two time less size than .bin file.
-- **.bindiffvar** - main idea is the following: prime numbers usually stay close to each other. For even big numbers (but numbers that fit into C++ long long type) maximum distance between two consequitive primes is always less than 800.
-Is most cases distance is even less than 255. It means that if distance is less than 255 we can code this difference with 1 byte, and only for rare cases when the difference is larger than 255 we can code such value with 2 bytes.
+- **.bindiffvar** - main idea is the following: prime numbers usually stay close to each other. For even big numbers (but numbers that fit into C++ long long type) maximum distance between two consequitive primes is always less than 800.  
+Is most cases distance is even less than 255. It means that if distance is less than 255 we can code this difference with 1 byte, and only for rare cases when the difference is larger than 255 we can code such value with 2 bytes.  
 That allows us to create even more 'compressed' format of storing such numbers. **.bindiffvar** format uses 'variable length' coding to store difference between two consequitive primes numbers.
 it makes file with primes numbers 10 times less in size than txt format.
 
