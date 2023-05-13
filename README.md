@@ -1,6 +1,6 @@
 # Eratosfen tool
 This is a tool that implements Eratosthen algorithm of generating prime numbers.
-This implementation is able to generate numbers in the range FROM-LENGTH specified in command line.
+This implementation is able to generate numbers in the range START-LENGTH specified in command line.
 
 ## Command line parameters
 There can be up to three command line arguments.
