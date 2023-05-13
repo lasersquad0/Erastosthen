@@ -1,8 +1,8 @@
-# Erastofen
+# Eratosfen tool
 This is a tool that implements Eratosthen algorithm of generating prime numbers.
 This implementation is able to generate numbers in the range FROM-LENGTH specified in command line.
 
-##Command line parameters
+## Command line parameters
 There can be up to three command line arguments.
 Only the first argument is mandatory, while two others can be omited.
 If argument is omitted than default hardcoded value is used for that parameter.
@@ -10,7 +10,7 @@ If argument is omitted than default hardcoded value is used for that parameter.
 First command line argument consists of two symbold.
 First symbol defines prime numbers generation mode, second symbol defines type of output file where primes numbers will be stored.
 
-##Generation mode
+## Generation mode
 
 There are two modes: simple and 'compressed'.
 Eratosthen algorythm requires much memory for its implementation.
@@ -19,7 +19,7 @@ Simple mode is strainghtforward implementation of Eratosthen algorithm.
 Use symbol 's' to use simple mode of generation prime numbers
 Use symbol 'c' to use compressed mode of generating primes.
 
-##Output file type
+## Output file type
 Generated  primes numbers can be stored into file in 5 different formats. 
 Select file format that is appropriate for you.
 
@@ -38,7 +38,7 @@ it makes file with primes numbers 10 times less in size than txt format.
 To specify file format use numbers 1..5 rights after mode sylbol ('c' or 's').
 1 is txt format, 5 is bindiffvar format.
 
-##Start and Length
+## Start and Length
 Second and third arguments define START and LENGTH parameters of generating primes.
 You can use factor modificators to make it more convenient to define range.
 B - bytes
