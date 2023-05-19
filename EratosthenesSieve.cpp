@@ -467,6 +467,26 @@ uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* pri
     return cnt;
 }
 
+void EratosthenesSieve::printUsage()
+{
+    cout << "Usage:" << endl;
+    cout << APP_EXE_NAME << " <alg><outputformat> <start> <length>" << endl;
+    cout << "   <alg> - either symbol 'c' (means compressed and needs less memory) or 's' ( simple and needs more memory)" << endl;
+    cout << "   <outputformat> - one digit from range 1..5. Specifies file format to store prime numbers: 1-txt, 2-txtdiff, 3-bin, 4-bindiff, 5-bindiffvar" << endl;
+    cout << "   <start> - starting value for generating primes. Accepts modificators B (bytes), M (mega), G (giga), T (tera) for big values" << endl;
+    cout << "   <length> - length of a range. Primes are generated in a range: start...start+length. Accepts modificators B,M,G,T" << endl;
+
+    cout << endl<< "Examples:" << endl;
+    cout << APP_EXE_NAME << " c1" << endl;
+    cout << APP_EXE_NAME << " c2 900G" << endl;
+    cout << APP_EXE_NAME << " c4 100G 10G" << endl;
+    cout << APP_EXE_NAME << " s3 5T 50G" << endl;
+    cout << APP_EXE_NAME << " s1 20000G 1G" << endl;
+    cout << APP_EXE_NAME << " c2 100M 100M" << endl;
+    cout << APP_EXE_NAME << " c5 1000B 1G" << endl;
+    cout << APP_EXE_NAME << " c5 0G 1G" << endl;
+}
+
 // первый параметр командной строки это режим и тип output файла
 // режима 2: сжатый (по умолчанию) и simple (расжатый требует в 2 раза больше памяти)
 // типов output файлов четыре: txt, txtdiff, bin, bindiff, bindiffvar.
@@ -487,8 +507,9 @@ void EratosthenesSieve::parseCmdLine(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("No command line arguments, using default start value '%llu'\n", real_start);
-        return;
+        printUsage();
+        //cout << "No command line arguments found." << endl;
+        throw invalid_cmd_option("No command line arguments found");
     }
 
     if (argc > 1)

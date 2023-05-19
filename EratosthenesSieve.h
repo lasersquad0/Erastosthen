@@ -4,7 +4,17 @@
 #include "SegmentedArray.h"
 
 
-#define Pre_Loaded_Primes_Filename "primes - 0-1G 2.txt"
+#define Pre_Loaded_Primes_Filename "primes - 0-1G.txt"
+#define APP_NAME "Eratosthen"
+#define APP_EXE_NAME APP_NAME".exe"
+
+class invalid_cmd_option: public invalid_argument
+{
+public:
+	invalid_cmd_option(string str) :invalid_argument(str)
+	{
+	}
+};
 
 class EratosthenesSieve
 {
@@ -52,6 +62,7 @@ public:
 	}
 
 	void parseCmdLine(int argc, char* argv[]);
+	void printUsage();
 	void Calculate();
 
 };

@@ -15,6 +15,7 @@ struct MyGroupSeparator : numpunct<char>
 };
 
 
+
 int main(int argc, char* argv[])
 {
     //cout << "Erastofen START" << endl;
@@ -29,7 +30,11 @@ int main(int argc, char* argv[])
         sieve.Calculate();
 
     }
-    catch(exception e)
+    catch (invalid_cmd_option& e)
+    {
+        //cout << "Nothing" << endl;
+    }
+    catch(exception& e)
     {
         printf(e.what());
     }
