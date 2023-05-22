@@ -26,7 +26,6 @@ int main(int argc, char* argv[])
     {
         EratosthenesSieve sieve;
         sieve.parseCmdLine(argc, argv);
-        //sieve.CalculateSimple();
         sieve.Calculate();
 
     }

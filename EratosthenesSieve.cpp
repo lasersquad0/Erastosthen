@@ -171,11 +171,11 @@ void EratosthenesSieve::CalculateOptimum()
 
     switch (OUTPUT_FILE_TYPE)
     {
-    case 1: primesSaved = saveAsTXT(START, sarr, outputFilename, SIMPLE_MODE, false);break;
-    case 2: primesSaved = saveAsTXT(START, sarr, outputFilename, SIMPLE_MODE, true); break;
-    case 3: primesSaved = saveAsBIN(START, sarr, outputFilename, SIMPLE_MODE, false);break;
-    case 4: primesSaved = saveAsBIN(START, sarr, outputFilename, SIMPLE_MODE, true); break;
-    case 5: primesSaved = saveAsBINVar(START, sarr, outputFilename, SIMPLE_MODE);    break;
+    case 1: primesSaved = saveAsTXTOptimumMode(START, sarr, outputFilename);break;
+    case 2: primesSaved = saveAsTXTDiffOptimumMode(START, sarr, outputFilename);break;
+    case 3: primesSaved = saveAsBINOptimumMode(START, sarr, outputFilename);break;
+    case 4: primesSaved = saveAsBINDiffOptimumMode(START, sarr, outputFilename);break;
+    case 5: primesSaved = saveAsBINDiffVar(START, sarr, outputFilename, false);break;
     }
     
     cout << "Primes " << primesSaved << " were saved to file '" << outputFilename << "'." << endl;
@@ -264,11 +264,11 @@ void EratosthenesSieve::CalculateSimple()
 
     switch (OUTPUT_FILE_TYPE)
     {
-    case 1: primesSaved = saveAsTXT(real_start, sarr, outputFilename, SIMPLE_MODE, false);break;
-    case 2: primesSaved = saveAsTXT(real_start, sarr, outputFilename, SIMPLE_MODE, true); break;
-    case 3: primesSaved = saveAsBIN(real_start, sarr, outputFilename, SIMPLE_MODE, false);break;
-    case 4: primesSaved = saveAsBIN(real_start, sarr, outputFilename, SIMPLE_MODE, true); break;
-    case 5: primesSaved = saveAsBINVar(real_start, sarr, outputFilename, SIMPLE_MODE);    break;
+    case 1: primesSaved = saveAsTXT(real_start, sarr, outputFilename, true, false);break;
+    case 2: primesSaved = saveAsTXT(real_start, sarr, outputFilename, true, true); break;
+    case 3: primesSaved = saveAsBIN(real_start, sarr, outputFilename, true, false);break;
+    case 4: primesSaved = saveAsBIN(real_start, sarr, outputFilename, true, true); break;
+    case 5: primesSaved = saveAsBINDiffVar(real_start, sarr, outputFilename, true);break;
     }
 
     cout << "Primes " << primesSaved << " were saved to file '" << outputFilename << "'." << endl;
@@ -289,22 +289,21 @@ uint64_t EratosthenesSieve::saveAsTXT(uint64_t start, SegmentedArray* sarr, stri
     fstream f;
     f.exceptions(ifstream::failbit | ifstream::badbit);
     f.sync_with_stdio(false);
-
-    //if(diffMode)
-    //    outputFilename += ".diff.txt";
-    //else
-    //    outputFilename += ".txt";
-
     f.open(outputFilename, ios::out | ios::binary);
     
     string s;
     s.reserve(chunk);
 
-    if(!simpleMode && (start == 0)) 
-        s.append("2,"); // заглушка для сжатого массива если генерим числа начиная с 0.
-
     uint64_t cntPrimes = 0;
     uint64_t lastPrime = 0;
+    uint64_t prime = 0;
+
+    if (!simpleMode && (start == 0))
+    {
+        s.append("2,"); // заглушка для сжатого массива если генерим числа начиная с 0.
+        lastPrime = 2;
+    }
+
     for (uint64_t i = start; i < sarr->size(); ++i)
     {
         if (!sarr->get(i))
@@ -312,17 +311,20 @@ uint64_t EratosthenesSieve::saveAsTXT(uint64_t start, SegmentedArray* sarr, stri
             cntPrimes++;
             
             if (simpleMode)
+                prime = i;
+            else
+                prime = 2 * i + 1;
+
+            if (diffMode)
             {
-                s.append(to_string(i - lastPrime));
-                if (diffMode) lastPrime = i;
+                s.append(to_string(prime - lastPrime));
+                lastPrime = prime;
             }
             else
             {
-                uint64_t ii = 2 * i + 1;
-                s.append(to_string(ii - lastPrime));
-                if (diffMode) lastPrime = ii;
+                s.append(to_string(prime));
             }
-
+           
             s.append(",");
 
             if (s.size() > chunk - 20) // when we are close to capacity but еще НЕ перепрыгнули ее
@@ -340,42 +342,140 @@ uint64_t EratosthenesSieve::saveAsTXT(uint64_t start, SegmentedArray* sarr, stri
     return cntPrimes;
 }
 
+uint64_t EratosthenesSieve::saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename)
+{
+    uint32_t chunk = 10'000'000;
+
+    fstream f;
+    f.exceptions(ifstream::failbit | ifstream::badbit);
+    f.sync_with_stdio(false);
+    f.open(outputFilename, ios::out | ios::binary);
+
+    string s;
+    s.reserve(chunk);
+
+    uint64_t cntPrimes = 0;
+    uint64_t lastPrime = 0;
+    uint64_t prime = 0;
+
+    if (start == 0)
+    {
+        s.append("2,"); // заглушка для сжатого массива если генерим числа начиная с 0.
+        lastPrime = 2;
+    }
+
+    for (uint64_t i = start; i < sarr->size(); ++i)
+    {
+        if (!sarr->get(i))
+        {
+            cntPrimes++;
+            prime = 2 * i + 1;
+
+            s.append(to_string(prime - lastPrime));
+            lastPrime = prime;
+ 
+            s.append(",");
+
+            if (s.size() > chunk - 20) // when we are close to capacity but еще НЕ перепрыгнули ее
+            {
+                f.write(s.c_str(), s.length());
+                // f.flush();
+                s.clear(); // очищаем строку но оставляем capacity
+            }
+        }
+    }
+
+    f.write(s.c_str(), s.length());
+    f.close();
+
+    return cntPrimes;
+}
+
+uint64_t EratosthenesSieve::saveAsTXTOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename)
+{
+    uint32_t chunk = 10'000'000;
+
+    fstream f;
+    f.exceptions(ifstream::failbit | ifstream::badbit);
+    f.sync_with_stdio(false);
+    f.open(outputFilename, ios::out | ios::binary);
+
+    string s;
+    s.reserve(chunk);
+
+    uint64_t cntPrimes = 0;
+    uint64_t prime = 0;
+
+    if (start == 0)
+        s.append("2,"); // заглушка для сжатого массива если генерим числа начиная с 0.
+ 
+    for (uint64_t i = start; i < sarr->size(); ++i)
+    {
+        if (!sarr->get(i))
+        {
+            cntPrimes++;
+            prime = 2 * i + 1;
+
+            s.append(to_string(prime));
+            s.append(",");
+
+            if (s.size() > chunk - 20) // when we are close to capacity but еще НЕ перепрыгнули ее
+            {
+                f.write(s.c_str(), s.length());
+                // f.flush();
+                s.clear(); // очищаем строку но оставляем capacity
+            }
+        }
+    }
+
+    f.write(s.c_str(), s.length());
+    f.close();
+
+    return cntPrimes;
+}
+
 uint64_t EratosthenesSieve::saveAsBIN(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode, bool diffMode)
 {
     fstream f;
     f.exceptions(ifstream::failbit | ifstream::badbit);
     f.sync_with_stdio(false);
-
-    //if(diffMode)
-    //    outputFilename += ".diffvar.bin";
-    //else
-    //    outputFilename += ".bin";
-
     f.open(outputFilename, ios::out | ios::binary);
 
+    uint64_t prime;
     uint64_t cntPrimes = 0;
     uint64_t lastPrime = 0;
+
+    if (!simpleMode && (start == 0))
+        prime = 2, lastPrime = 2, f.write((char*)&prime, sizeof(uint64_t)); // заглушка для сжатого массива если генерим числа начиная с 0.
+
 
     for (uint64_t i = start; i < sarr->size(); i++)
     {
         if (!sarr->get(i))
         {
             cntPrimes++;
-            uint64_t prime;
-            
+
             if (simpleMode)
-                prime = i;                
+                prime = i;
             else
                 prime = 2 * i + 1;
 
-            uint64_t diff = prime - lastPrime;
+            if (diffMode)
+            {
+                if (lastPrime == 0)
+                {
+                    f.write((char*)&prime, sizeof(uint64_t)); // save as 8 byte value (full number)
+                }
+                else
+                {
+                    uint16_t diff = (uint16_t)(prime - lastPrime);
+                    f.write((char*)&diff, sizeof(uint16_t));  // save a 2 bytes value (difference)
+                }
 
-            if(lastPrime == 0)
-                f.write((char*)&prime, sizeof(uint64_t)); // save as 8 byte value (full number)
+                lastPrime = prime;
+            }
             else
-                f.write((char*)&diff, sizeof(uint16_t));  // sace a 2 bytes value (difference)
-
-            if (diffMode) lastPrime = prime;
+                f.write((char*)&prime, sizeof(uint64_t)); // save as 8 byte value (full number)
         }
     }
 
@@ -384,30 +484,111 @@ uint64_t EratosthenesSieve::saveAsBIN(uint64_t start, SegmentedArray* sarr, stri
     return cntPrimes;
 }
 
-uint64_t EratosthenesSieve::saveAsBINVar(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode)
+uint64_t EratosthenesSieve::saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename)
 {
     fstream f;
     f.exceptions(ifstream::failbit | ifstream::badbit);
     f.sync_with_stdio(false);
-
     f.open(outputFilename, ios::out | ios::binary);
 
+    uint64_t prime;
     uint64_t cntPrimes = 0;
-    uint64_t lastPrime = 0;
-    uint8_t buf[9];
+
+    if (start == 0)
+        prime = 2, f.write((char*)&prime, sizeof(uint64_t)); // заглушка для сжатого массива если генерим числа начиная с 0.
+
 
     for (uint64_t i = start; i < sarr->size(); i++)
     {
         if (!sarr->get(i))
         {
-            uint64_t prime;
+            cntPrimes++;            
+            prime = 2 * i + 1;
+            f.write((char*)&prime, sizeof(uint64_t)); 
+        }
+    }
+
+    f.close();
+
+    return cntPrimes;
+}
+
+uint64_t EratosthenesSieve::saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename)
+{
+    fstream f;
+    f.exceptions(ifstream::failbit | ifstream::badbit);
+    f.sync_with_stdio(false);
+    f.open(outputFilename, ios::out | ios::binary);
+
+    uint64_t prime;
+    uint64_t cntPrimes = 0;
+    uint64_t lastPrime = 0;
+
+    if (start == 0)
+        prime = 2, lastPrime = 2, f.write((char*)&prime, sizeof(uint64_t)); // заглушка для сжатого массива если генерим числа начиная с 0.
+
+
+    for (uint64_t i = start; i < sarr->size(); i++)
+    {
+        if (!sarr->get(i))
+        {
             cntPrimes++;
+
+            prime = 2 * i + 1;
+
+            if (lastPrime == 0)
+            {
+                f.write((char*)&prime, sizeof(uint64_t)); // save as 8 byte value (full number)
+            }
+            else
+            {
+                uint16_t diff = (uint16_t)(prime - lastPrime);
+                f.write((char*)&diff, sizeof(uint16_t));  // save a 2 bytes value (difference)
+            }
+
+            lastPrime = prime;
+        }
+    }
+
+    f.close();
+
+    return cntPrimes;
+}
+
+uint64_t EratosthenesSieve::saveAsBINDiffVar(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode)
+{
+    fstream f;
+    f.exceptions(ifstream::failbit | ifstream::badbit);
+    f.sync_with_stdio(false);
+    f.open(outputFilename, ios::out | ios::binary);
+
+    uint64_t cntPrimes = 0;
+    uint64_t lastPrime = 0;
+    uint8_t buf[9];
+    uint64_t prime;
+
+    if (!simpleMode && (start == 0)) // заглушка для сжатого массива если генерим числа начиная с 0.
+    {
+        prime = 2; 
+        size_t len = var_len_encode(buf, prime);
+        f.write((char*)buf, len);
+        lastPrime = prime;
+    }
+
+    for (uint64_t i = start; i < sarr->size(); i++)
+    {
+        if (!sarr->get(i))
+        {        
+            cntPrimes++;
+
             if (simpleMode)
                 prime = i;
             else
                 prime = 2 * i + 1;
 
-            uint64_t diff = prime - lastPrime;
+            uint64_t diff = (prime - lastPrime); // разница всегда четная. поэтому можем хранить половину значения. больше значений уместится в 1 байт.
+
+            if (lastPrime > 2) diff /= 2;
 
             size_t len = var_len_encode(buf, diff);
             f.write((char*)buf, len);
@@ -432,13 +613,15 @@ uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* pri
 
     string line;
 
-    uint64_t lastPrime = 0;
+    uint64_t prime = 0;
     uint32_t cnt = 0;
-    while ((lastPrime < stopPrime) && !f.eof())
+    while (prime < stopPrime)
     {
         getline(f, line, ',');
-        lastPrime = atoll(line.c_str());
-        primes[cnt++] = lastPrime;
+        if (f.eof()) break;
+
+        prime = atoll(line.c_str());
+        primes[cnt++] = prime;
     }
 
     f.close();
@@ -456,9 +639,11 @@ uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* pri
     string line;
 
     uint32_t cnt = 0;
-    while ((cnt < len) && !f.eof())
+    while (cnt < len)
     {
         getline(f, line, ',');
+        if (f.eof()) break;
+
         primes[cnt++] = atoll(line.c_str());
     }
 
@@ -469,7 +654,7 @@ uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* pri
 
 void EratosthenesSieve::printUsage()
 {
-    cout << "Usage:" << endl;
+    cout << endl << "Usage:" << endl;
     cout << APP_EXE_NAME << " <alg><outputformat> <start> <length>" << endl;
     cout << "   <alg> - either symbol 'c' (means compressed and needs less memory) or 's' ( simple and needs more memory)" << endl;
     cout << "   <outputformat> - one digit from range 1..5. Specifies file format to store prime numbers: 1-txt, 2-txtdiff, 3-bin, 4-bindiff, 5-bindiffvar" << endl;

@@ -40,8 +40,12 @@ private:
 	void CalculateSimple();
 
 	uint64_t saveAsTXT(uint64_t START, SegmentedArray *sarr, string outputFilename, bool simpleMode, bool diffMode);
+	uint64_t saveAsTXTOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
+	uint64_t saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
 	uint64_t saveAsBIN(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode, bool diffMode);
-	uint64_t saveAsBINVar(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode);
+	uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
+	uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
+	uint64_t saveAsBINDiffVar(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode);
 	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
 	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len);
 	
