@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../common/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common/src;../command-line-argument-parser2/cli</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../common/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common/src;../command-line-argument-parser2/cli</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,6 +129,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\command-line-argument-parser2\cli\CommandLine.cpp" />
+    <ClCompile Include="..\command-line-argument-parser2\cli\DefaultParser.cpp" />
+    <ClCompile Include="..\command-line-argument-parser2\cli\HelpFormatter.cpp" />
+    <ClCompile Include="..\command-line-argument-parser2\cli\Option.cpp" />
+    <ClCompile Include="..\command-line-argument-parser2\cli\OptionList.cpp" />
     <ClCompile Include="Erastofen.cpp" />
     <ClCompile Include="EratosthenesSieve.cpp" />
     <ClCompile Include="SegmentedArray.cpp" />

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "PrimesFIO.h"
 #include "SegmentedArray.h"
 
 
@@ -29,8 +30,8 @@ private:
 	char symFACTOR = 'G'; // символьное предстваление Factor для формирования имени output файла.
 
 	uint64_t FACTOR = FACTOR_G; // G по умолчанию по потом перепишется исходя из переданного диапазона.
-	bool SIMPLE_MODE = false;
-	uint32_t OUTPUT_FILE_TYPE = 1; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
+	bool OPTIMUM_MODE = true;
+	PRIMES_FILE_FORMATS OUTPUT_FILE_TYPE; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
 
 	string primesInFile;
 	uint64_t real_start;  
@@ -46,13 +47,13 @@ private:
 	uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
 	uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
 	uint64_t saveAsBINDiffVar(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode);
-	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
+	//uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
 	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len);
 	
 	uint32_t getArraySize();
 	string getOutputFilename();
 	uint64_t parseOption(string s);
-	void parseMode(string s);
+	//void parseMode(string s);
 	void printTime(string msg);
 	string millisecToStr(long long ms);
 
@@ -60,12 +61,12 @@ public:
 	static const uint64_t DEFAULT_START = 20ULL * FACTOR_T; // это реальные primes откуда стартуем если не передано в параметрах command line
 	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // Длина промежутка на котором ищем простые. Здесь всегда фиксирована (hardcoded)
 
-	EratosthenesSieve(uint64_t strt = DEFAULT_START, uint64_t len = DEFAULT_LENGTH, string primesInputFile = Pre_Loaded_Primes_Filename) :real_start(strt), real_length(len), primesInFile(primesInputFile)
-	{
+	EratosthenesSieve(bool mode, PRIMES_FILE_FORMATS oFileType, uint64_t strt, uint64_t len, string primesInputFile = Pre_Loaded_Primes_Filename);
+	EratosthenesSieve();
 
-	}
-
-	void parseCmdLine(int argc, char* argv[]);
+	
+	//void parseCmdLine(int argc, char* argv[]);
+	void parseParams(string mode, string oft, string start, string len);
 	void printUsage();
 	void Calculate();
 

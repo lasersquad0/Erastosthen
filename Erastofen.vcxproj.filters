@@ -24,6 +24,21 @@
     <ClCompile Include="EratosthenesSieve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\command-line-argument-parser2\cli\CommandLine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\command-line-argument-parser2\cli\DefaultParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\command-line-argument-parser2\cli\HelpFormatter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\command-line-argument-parser2\cli\Option.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\command-line-argument-parser2\cli\OptionList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SegmentedArray.h">
