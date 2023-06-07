@@ -5,7 +5,7 @@
 #include "SegmentedArray.h"
 
 
-#define Pre_Loaded_Primes_Filename "primes - 0-1G.txt"
+#define Pre_Loaded_Primes_Filename "primes - 0-1G.diffvar.bin"
 #define APP_NAME "Eratosthen"
 #define APP_EXE_NAME APP_NAME".exe"
 
@@ -20,16 +20,18 @@ public:
 class EratosthenesSieve
 {
 private:
-	//static const string Pre_Loaded_Primes_Filename; //= "primes - 0-1G.txt";
 	const string fSymbols = "BMGTP";
 	static const uint64_t FACTOR_B = 1ULL; // B means "bytes". so the factor = 1.
 	static const uint64_t FACTOR_M = 1'000'000ULL; // 'megabytes'
 	static const uint64_t FACTOR_G = 1'000'000'000ULL; // 'gigabytes'
 	static const uint64_t FACTOR_T = 1'000'000'000'000ULL; // terabytes
 	static const uint64_t FACTOR_P = 1'000'000'000'000'000ULL; // petabytes
-	char symFACTOR = 'G'; // символьное предстваление Factor для формирования имени output файла.
+	
+	char symFACTORstart = 'G'; // символьное представление Factor для значения real_start для формирования имени output файла.
+	char symFACTORlen = 'G'; // символьное представление Factor для значения real_length для формирования имени output файла.
 
-	uint64_t FACTOR = FACTOR_G; // G по умолчанию по потом перепишется исходя из переданного диапазона.
+	uint64_t FACTORstart = FACTOR_G; // G по умолчанию по потом перепишется исходя из переданного диапазона.
+	uint64_t FACTORlen = FACTOR_G;
 	bool OPTIMUM_MODE = true;
 	PRIMES_FILE_FORMATS OUTPUT_FILE_TYPE; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
 
@@ -48,11 +50,12 @@ private:
 	uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, string outputFilename);
 	uint64_t saveAsBINDiffVar(uint64_t start, SegmentedArray* sarr, string outputFilename, bool simpleMode);
 	//uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
-	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len);
+	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
+	uint32_t LoadPrimesFromBINDiffVar(string filename, uint64_t* primes, size_t len, uint64_t stopPrime);
 	
-	uint32_t getArraySize();
+	//uint32_t getArraySize();
 	string getOutputFilename();
-	uint64_t parseOption(string s);
+	uint64_t parseOption(string s, char* symFactor, uint64_t* factor);
 	//void parseMode(string s);
 	void printTime(string msg);
 	string millisecToStr(long long ms);

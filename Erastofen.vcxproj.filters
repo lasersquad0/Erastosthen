@@ -24,19 +24,19 @@
     <ClCompile Include="EratosthenesSieve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\command-line-argument-parser2\cli\CommandLine.cpp">
+    <ClCompile Include="..\command-line-argument-parser3\cli\CommandLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\command-line-argument-parser2\cli\DefaultParser.cpp">
+    <ClCompile Include="..\command-line-argument-parser3\cli\DefaultParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\command-line-argument-parser2\cli\HelpFormatter.cpp">
+    <ClCompile Include="..\command-line-argument-parser3\cli\HelpFormatter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\command-line-argument-parser2\cli\Option.cpp">
+    <ClCompile Include="..\command-line-argument-parser3\cli\Option.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\command-line-argument-parser2\cli\OptionList.cpp">
+    <ClCompile Include="..\command-line-argument-parser3\cli\OptionList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

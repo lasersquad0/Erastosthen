@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include "EratosthenesSieve.h"
 
+string g_PrimesFilename = Pre_Loaded_Primes_Filename;
+
 using namespace std;
 
 size_t var_len_encode(uint8_t buf[9], uint64_t num)
@@ -73,20 +75,20 @@ EratosthenesSieve::EratosthenesSieve() // initialize to DEFAULT values
     real_length = DEFAULT_LENGTH;
 };
 
-uint32_t EratosthenesSieve::getArraySize()
-{
-    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(real_start + real_length) + 1ULL); // max простое число нужное нам для расчетов переданного диапазона
-    uint64_t numPrimesLessThan = maxPrimeToLoad/log(maxPrimeToLoad); // примерное кол-во простых чисел нужное нам для расчетов переданного диапазона
-    
-    printf("Calculation: there are %llu primes less than %llu.\n", numPrimesLessThan, maxPrimeToLoad);
-
-    return (uint32_t)(numPrimesLessThan * 1.2); // даем запас 20% для массива так как расчет не точный
-}
+//uint32_t EratosthenesSieve::getArraySize()
+//{
+//    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(real_start + real_length) + 1ULL); // max простое число нужное нам для расчетов переданного диапазона
+//    uint64_t numPrimesLessThan = maxPrimeToLoad/log(maxPrimeToLoad); // примерное кол-во простых чисел нужное нам для расчетов переданного диапазона
+//    
+//    cout << "There are " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << "." << endl;
+//
+//    return (uint32_t)(numPrimesLessThan * 1.2); // даем запас 20% для массива так как расчет не точный
+//}
 
 string EratosthenesSieve::getOutputFilename()
 {
     char buf[100];
-    sprintf_s(buf, 100, "primes - %llu-%llu%c", real_start / FACTOR, (real_start + real_length) / FACTOR, symFACTOR);
+    sprintf_s(buf, 100, "primes - %llu%c-%llu%c", real_start/FACTORstart, symFACTORstart, real_length/FACTORlen, symFACTORlen);
     
     string fname = buf;
     switch (OUTPUT_FILE_TYPE)
@@ -117,22 +119,28 @@ void EratosthenesSieve::CalculateOptimum()
     uint64_t LENGTH = (real_length) / 2ULL; // переводим в индекс
 
     printf("Calculating prime numbers with Eratosfen algorithm.\n");
-    cout << "Range: " << real_start << "..." << real_start + real_length << endl;
+    cout << "Start: " << real_start << endl;
+    cout << "Length: " << real_length << endl;
 
     auto sarr = new SegmentedArray(START, LENGTH);
-    //System.out.format("Big array capacity %,d\n", sarr.capacity());
 
-    uint32_t arrSize = getArraySize();
-    cout << "Calculated array size for primes to be read from a file: " << arrSize << endl;
+    //uint32_t prldPrimesSize = getArraySize();
+    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(real_start + real_length)); // max простое число нужное нам для расчетов переданного диапазона
+    uint64_t numPrimesLessThan = maxPrimeToLoad / log(maxPrimeToLoad); // примерное кол-во простых чисел нужное нам для расчетов переданного диапазона
+    cout << "There are " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << "." << endl;
 
-    uint64_t* preloadedPrimes = new uint64_t[arrSize];
+    uint32_t prldPrimesSize = (uint32_t)(numPrimesLessThan * 1.2); // даем запас 20% для массива так как расчет не точный
+    
+    cout << "Calculated array size for primes to be read from a file: " << prldPrimesSize << endl;
 
-    uint32_t readPrimes = LoadPrimesFromTXTFile(Pre_Loaded_Primes_Filename, preloadedPrimes, arrSize);
+    uint64_t* prldPrimes = new uint64_t[prldPrimesSize];
+
+    uint32_t readPrimes = LoadPrimesFromBINDiffVar(g_PrimesFilename, prldPrimes, prldPrimesSize, maxPrimeToLoad);
     cout << "Number of primes actually read from file: " << readPrimes << endl;
 
-    //if (preloadedPrimes[readPrimes - 1] < maxPrimeToLoad)
-    if(readPrimes < arrSize)
-        printf("WARNING: There might be not enough primes in a file '%s' for calculation new primes!\n", Pre_Loaded_Primes_Filename);
+    if (prldPrimes[readPrimes - 1] < maxPrimeToLoad) // считали недостаточно primes. либо в файле с primes недостаточно primes либо размер массива посчитали неправилино (маловероятно)
+    //if(readPrimes < prldPrimesSize)
+        cout << "WARNING: There might be not enough primes in a file '" << g_PrimesFilename << "' for calculation new primes!" << endl;
 
     auto stop = chrono::high_resolution_clock::now();
     cout << "Primes loaded in " << millisecToStr(chrono::duration_cast<chrono::milliseconds>(stop - start1).count()) << endl;
@@ -153,7 +161,7 @@ void EratosthenesSieve::CalculateOptimum()
             percentCounter += delta;
         }
 
-        uint64_t currPrime = preloadedPrimes[i];
+        uint64_t currPrime = prldPrimes[i];
 
         uint64_t begin = real_start % currPrime;
         //long begin = (REAL_START/currPrime)*currPrime;
@@ -207,7 +215,7 @@ void EratosthenesSieve::CalculateOptimum()
 
     cout << "File saved: " << millisecToStr(chrono::duration_cast<chrono::milliseconds>(stop - start2).count()) << endl;
 
-    delete[] preloadedPrimes;
+    delete[] prldPrimes;
     delete sarr;
 }
 
@@ -216,22 +224,28 @@ void EratosthenesSieve::CalculateSimple()
     auto start1 = chrono::high_resolution_clock::now();
 
     printf("Calculating prime numbers with Eratosfen algorithm.\n");
-    cout << "Range: " << real_start << "..." << real_start + real_length << endl;
+    cout << "Start: " << real_start << endl;
+    cout << "Length: " << real_length << endl;
 
     auto sarr = new SegmentedArray(real_start, real_length);
     //System.out.format("Big array capacity %,d\n", sarr.capacity());
 
-    uint32_t arrSize = getArraySize();
-    cout << "Calculated array size for primes to be read from a file: " << arrSize << endl;
+    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(real_start + real_length)); // max простое число нужное нам для расчетов переданного диапазона
+    uint64_t numPrimesLessThan = maxPrimeToLoad / log(maxPrimeToLoad); // примерное кол-во простых чисел нужное нам для расчетов переданного диапазона
+    cout << "There are " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << "." << endl;
 
-    uint64_t* preloadedPrimes = new uint64_t[arrSize];
+    uint32_t prldPrimesSize = (uint32_t)(numPrimesLessThan * 1.2); // даем запас 20% для массива так как расчет не точный
 
-    uint32_t readPrimes = LoadPrimesFromTXTFile(Pre_Loaded_Primes_Filename, preloadedPrimes, arrSize);
+    cout << "Calculated array size for primes to be read from a file: " << prldPrimesSize << endl;
+
+    uint64_t* preloadedPrimes = new uint64_t[prldPrimesSize];
+
+    uint32_t readPrimes = LoadPrimesFromTXTFile(g_PrimesFilename, preloadedPrimes, prldPrimesSize, maxPrimeToLoad);
     cout << "Number of primes actually read from file: " << readPrimes << endl;
 
-    //if (preloadedPrimes[readPrimes - 1] < maxPrimeToLoad)
-    if (readPrimes < arrSize)
-        printf("WARNING: There might be not enough primes in a file '%s' for calculation new primes!\n", Pre_Loaded_Primes_Filename);
+    if (preloadedPrimes[readPrimes - 1] < maxPrimeToLoad)
+    //if (readPrimes < arrSize)
+        cout << "WARNING: There might be not enough primes in a file '" << g_PrimesFilename << "' for calculation new primes!" << endl;
 
     auto stop = chrono::high_resolution_clock::now();
     cout << "Primes loaded in " << millisecToStr(chrono::duration_cast<chrono::milliseconds>(stop - start1).count()) << endl;
@@ -628,39 +642,52 @@ uint64_t EratosthenesSieve::saveAsBINDiffVar(uint64_t start, SegmentedArray* sar
     return cntPrimes;
 }
 
-
-/*
-//Загружаем простые числа из файла пока не загрузим число большее либо равное stopPrime
-uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime)
+//Загружаем либо весь файл, либо up to len, либо до stopPrime простых чисел из файла 
+uint32_t EratosthenesSieve::LoadPrimesFromBINDiffVar(string filename, uint64_t* primes, size_t len, uint64_t stopPrime)
 {
     fstream f;
-    f.exceptions(ifstream::failbit | ifstream::badbit);
-    f.open(filename, ios::in);
+    f.exceptions(/*ifstream::failbit |*/ ifstream::badbit);
+    f.open(filename, ios::in | ios::binary);
 
-    string line;
+    uint64_t diff;
+    uint64_t lastPrime = 0;
+    uint8_t buf[9];
+    size_t maxSize;
 
-    uint64_t prime = 0;
     uint32_t cnt = 0;
-    while (prime < stopPrime)
+    while (cnt < len)
     {
-        getline(f, line, ',');
+        maxSize = 0;
+
+        while(true)
+        {
+            f.read((char*)(buf + maxSize), 1);
+            if (f.eof()) break;
+            if ((buf[maxSize++] & 0x80) == 0) break;
+        }
+
         if (f.eof()) break;
 
-        prime = atoll(line.c_str());
-        primes[cnt++] = prime;
-    }
+        size_t res = var_len_decode(buf, maxSize, &diff);
 
-    f.close();
+        assert(res > 0);
+
+        if (lastPrime > 2) diff *= 2; // умножаем на 2 все: кроме первого числа(lastPrime==0), и когда lastPrime==2
+
+        primes[cnt] = diff + lastPrime;
+        lastPrime = primes[cnt++];
+
+        if (lastPrime > stopPrime) break;
+    }
 
     return cnt;
 }
-*/
 
-//Загружаем либо весь файл либо up to len простых чисел из файла 
-uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len)
+//Загружаем либо весь файл, либо up to len, либо до stopPrime простых чисел из файла 
+uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len, uint64_t stopPrime)
 {
     fstream f;
-    f.exceptions(ifstream::failbit | ifstream::badbit);
+    f.exceptions(/*ifstream::failbit |*/ ifstream::badbit);
     f.open(filename, ios::in);
 
     string line;
@@ -671,7 +698,10 @@ uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* pri
         getline(f, line, ',');
         if (f.eof()) break;
 
-        primes[cnt++] = atoll(line.c_str());
+        primes[cnt] = atoll(line.c_str());
+
+        if (primes[cnt] > stopPrime) break;
+        cnt++;
     }
 
     f.close();
@@ -682,39 +712,25 @@ uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string filename, uint64_t* pri
 void EratosthenesSieve::printUsage()
 {
     cout << endl << "Usage:" << endl;
-    cout << APP_EXE_NAME << " <alg><outputformat> <start> <length>" << endl;
-    cout << "   <alg> - either symbol 'c' (means compressed and needs less memory) or 's' ( simple and needs more memory)" << endl;
-    cout << "   <outputformat> - one digit from range 1..5. Specifies file format to store prime numbers: 1-txt, 2-txtdiff, 3-bin, 4-bindiff, 5-bindiffvar" << endl;
-    cout << "   <start> - starting value for generating primes. Accepts modificators B (bytes), M (mega), G (giga), T (tera) for big values" << endl;
-    cout << "   <length> - length of a range. Primes are generated in a range: start...start+length. Accepts modificators B,M,G,T" << endl;
+    cout << APP_EXE_NAME << " -<option> <outputformat> <start> <length>" << endl;
+    cout << "   <option> - either symbol 'c' (means compressed alg and needs less memory) or 's' ( simple and needs more memory)" << endl;
+    cout << "   <outputformat> - String that specifies output file format with generated prime numbers. Possible values: txt, txtdiff, bin, bindiff, bindiffvar" << endl;
+    cout << "   <start> - starting value for generating primes. Accepts modificators B (bytes), M (mega), G (giga), T (tera), P (peta) for big values" << endl;
+    cout << "   <length> - length of a range. Primes are generated in a range: start...start+length. Accepts modificators B,M,G,T,P" << endl;
+    cout << "All three arguments are required." << endl;
 
     cout << endl<< "Examples:" << endl;
-    cout << APP_EXE_NAME << " c1" << endl;
-    cout << APP_EXE_NAME << " c2 900G" << endl;
-    cout << APP_EXE_NAME << " c4 100G 10G" << endl;
-    cout << APP_EXE_NAME << " s3 5T 50G" << endl;
-    cout << APP_EXE_NAME << " s1 20000G 1G" << endl;
-    cout << APP_EXE_NAME << " c2 100M 100M" << endl;
-    cout << APP_EXE_NAME << " c5 1000B 1G" << endl;
-    cout << APP_EXE_NAME << " c5 0G 1G" << endl;
+    cout << APP_EXE_NAME << " -s txt 0g 10g" << endl;
+    cout << APP_EXE_NAME << " -o bin 900G 100G" << endl;
+    cout << APP_EXE_NAME << " -o txtdiff 100T 10G" << endl;
+    cout << APP_EXE_NAME << " -s bindiff 5T 50G" << endl;
+    cout << APP_EXE_NAME << " -o bindiffvar 20P 1G" << endl;
+    cout << APP_EXE_NAME << " -o 1000P 100M" << endl;
+    cout << APP_EXE_NAME << " -o 1000B 1G" << endl;
+    cout << APP_EXE_NAME << " -o 0M 100M" << endl;
 }
 
-// первый параметр командной строки это режим и тип output файла
-// режима 2: сжатый (по умолчанию) и simple (расжатый требует в 2 раза больше памяти)
-// типов output файлов четыре: txt, txtdiff, bin, bindiff, bindiffvar.
-// bindiffvar - значения diff записываются в формате variable length: либо в 1 байт (0..127) либо в 2 байта (значения 128..16383).
-// формат cmd опции: [c,s][1,2,3,4,5]. 
-// опция может состоять из 2х символов. первый это либо 'с' либо 's'. второй это одна цифра от 1 до 5.
-// пропускать ничего нельзя, обязательно должна быть эта опция и обязательно одна буква, а за ней цифра (в таком порядке)
-// примеры:
-// Erastofen.exe c1 
-// Erastofen.exe c2 900G
-// Erastofen.exe c4 100G 10G
-// Erastofen.exe s3 5T 50G
-// Erastofen.exe s1 20000G 1G
-// Erastofen.exe c2 100M 100M
-// Erastofen.exe c5 1000B 1G
-// Erastofen.exe c5 0G 1G
+
 /*void EratosthenesSieve::parseCmdLine(int argc, char* argv[])
 {
     if (argc < 2)
@@ -735,14 +751,15 @@ void EratosthenesSieve::printUsage()
 
 }
 */
+
 void EratosthenesSieve::parseParams(string mode, string oft, string start, string len)
 {
     trimStr(mode);
     OPTIMUM_MODE = (mode == "o");
     
-    real_start = parseOption(start); 
+    real_start = parseOption(start, &symFACTORstart, &FACTORstart);
 
-    real_length = parseOption(len); 
+    real_length = parseOption(len, &symFACTORlen, &FACTORlen); 
 
     trimStr(oft);
     transform(oft.begin(), oft.end(), oft.begin(), ::toupper);
@@ -752,40 +769,10 @@ void EratosthenesSieve::parseParams(string mode, string oft, string start, strin
         throw invalid_argument("Error: Unsupported output file type specified.");
 }
 
-/*
-void EratosthenesSieve::parseMode(string s)
-{
-    // переводим в uppercase
-    transform(s.begin(), s.end(), s.begin(), ::toupper);
-
-    if (s.at(0) == 'C')
-        SIMPLE_MODE = false;
-    else if (s.at(0) == 'S')
-        SIMPLE_MODE = true;
-    else
-        printf("Wrong mode option is specified ('%c'), using default value.\n", s.at(0));
-
-    s = s.substr(1, s.length());
-    uint32_t v = 0;
-    try
-    {
-        v = stol(s);
-    }
-    catch(invalid_argument e)
-    {
-        // do nothing
-    }
-
-    if ((v > 0) && (v < 6))
-        OUTPUT_FILE_TYPE = v;
-    else
-        printf("Wrong output file type is specified ('%c'), using default value.\n", s.at(0));
-}
-*/
 
 // парсит одно значение либо real_start либо real_length в формате с Factor модификаторами G, T, P
 // примеры: 100G, 5T, 20000G, 400M, 0B
-uint64_t EratosthenesSieve::parseOption(string opt)
+uint64_t EratosthenesSieve::parseOption(string opt, char* symFactor, uint64_t* factor)
 {
     // remove any leading and traling spaces, just in case.
     size_t strBegin = opt.find_first_not_of(' ');
@@ -796,9 +783,9 @@ uint64_t EratosthenesSieve::parseOption(string opt)
     // to uppercase
     transform(opt.begin(), opt.end(), opt.begin(), ::toupper);
 
-    symFACTOR = opt.at(opt.length() - 1); // we need symFACTOR later for output filename
+    *symFactor = opt.at(opt.length() - 1); // we need symFACTOR later for output filename
 
-    if (fSymbols.find(symFACTOR) == string::npos)
+    if (fSymbols.find(*symFactor) == string::npos)
         throw invalid_argument("Error: Incorrect command line parameter '" + opt + "'.\n");
 
     opt = opt.substr(0, opt.length() - 1); // remove letter G at the end. Or T, or P, or M or B.
@@ -813,16 +800,16 @@ uint64_t EratosthenesSieve::parseOption(string opt)
         throw invalid_argument("Error: Parameter value should be a number: '" + opt + "'.\n");
     }
 
-    switch (symFACTOR)
+    switch (*symFactor)
     {
-    case 'B': FACTOR = FACTOR_B; break;
-    case 'M': FACTOR = FACTOR_M; break;
-    case 'G': FACTOR = FACTOR_G; break;
-    case 'T': FACTOR = FACTOR_T; break;
-    case 'P': FACTOR = FACTOR_P; break;
+    case 'B': *factor = FACTOR_B; break;
+    case 'M': *factor = FACTOR_M; break;
+    case 'G': *factor = FACTOR_G; break;
+    case 'T': *factor = FACTOR_T; break;
+    case 'P': *factor = FACTOR_P; break;
     }
 
-    return dStart * FACTOR;
+    return dStart * (*factor);
 }
 
 void EratosthenesSieve::printTime(string msg)
