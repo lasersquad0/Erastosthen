@@ -12,9 +12,12 @@ template<uint32_t Bits>
 class MyBitset
 {
 private:
-	static const uint32_t WORD_IN_BITS = sizeof(uint64_t)*8;
-	uint64_t arr[(Bits-1)/WORD_IN_BITS + 1];
-	mutex mtx;
+	static const uint32_t WORD_2POWER = 6; // 2^6==sizeof(uint64_t)*8 = 64;
+	static const uint32_t BITS_IN_WORD = 1 << WORD_2POWER; //==sizeof(uint64_t)*8 = 64;
+	static const uint32_t WORD_MASK = BITS_IN_WORD - 1; // =63=0x3F
+
+	uint64_t arr[(Bits-1)/BITS_IN_WORD + 1];
+	//mutex mtx;
 
 //	bool get_bit(uint64_t word, uint32_t offset)
 //	{
@@ -26,31 +29,35 @@ private:
 
 	uint64_t set_bit(uint64_t word, uint32_t offset, bool bit)
 	{
-		assert(offset < WORD_IN_BITS);
+		assert(offset < BITS_IN_WORD);
 		uint64_t mask = bit ? 0x01 : 0x00;
 		//mask <<= offset;
 
-		return word | (mask << offset);
+		return word | (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим заисать 0.
 	}
 
 public:
 	bool get(uint32_t index)
 	{
-		uint32_t index2 = index / WORD_IN_BITS;
-		uint32_t offset = index % WORD_IN_BITS;
-
-		//assert(offset < WORD_IN_BITS);
+		uint32_t index2 = index >> WORD_2POWER; //index / BITS_IN_WORD;
+		uint32_t offset = index & WORD_MASK; //index % BITS_IN_WORD;
 
 		return ((arr[index2] >> offset) & 0x01) == 1;
 	}
 
 	void set(uint32_t index, bool value)
 	{
-		uint32_t index2 = index / WORD_IN_BITS;
-		uint32_t offset = index % WORD_IN_BITS;
+		assert(value); // only true is allowed
+
+		uint32_t index2 = index >> WORD_2POWER; //index / BITS_IN_WORD;
+		uint32_t offset = index & WORD_MASK; //index % BITS_IN_WORD;
+
+		uint64_t mask = (uint64_t)value;// ? 0x01 : 0x00;
+
+		arr[index2] |= (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим заисать 0.
 
 		//mtx.lock();
-		arr[index2] = set_bit(arr[index2], offset, value);
+		//arr[index2] = set_bit(arr[index2], offset, value);
 		//mtx.unlock();
 	}
 	 
@@ -159,9 +166,9 @@ public:
 
 	uint64_t size() { return sz; }
 
-	uint64_t capacity() { return cpacity; }
+	//uint64_t capacity() { return cpacity; }
 
-	uint64_t segm() { return segments->size(); }
+	//uint64_t segm() { return segments->size(); }
 
 };
 

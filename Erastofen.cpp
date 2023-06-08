@@ -9,6 +9,7 @@
 #include "EratosthenesSieve.h"
 
 extern string g_PrimesFilename;
+extern int g_Threads;
 
 using namespace std;
 
@@ -23,7 +24,7 @@ void defineOptions(COptionsList& options)
     options.AddOption("s", "simple", "generate primes using simple Eratosthen sieve mode", 3);
     options.AddOption("o", "optimum", "generate primes using optimized Eratosthen sieve mode", 3);
     options.AddOption("p", "primesfile", string("file with primes to preload, if not specified '") + Pre_Loaded_Primes_Filename + "' file is used", 1);
-    //options.AddOption("t", "threads", "use specified number of threads for primes checking", 1);
+    options.AddOption("t", "threads", "use specified number of threads during primes checking", 1);
     options.AddOption("h", "help", "show help", 0);
 }
 
@@ -58,6 +59,24 @@ int main(int argc, char* argv[])
     if (cmd.HasOption("p"))
     {
         g_PrimesFilename = cmd.GetOptionValue("p", 0, Pre_Loaded_Primes_Filename);
+    }
+
+    if (cmd.HasOption("t"))
+    {
+        try
+        {
+            g_Threads = stoi(cmd.GetOptionValue("t"));
+            if ( (g_Threads == 0) || (g_Threads > 25) )
+            {
+                cout << "Number of threads is out of bounds (1...25)" << endl;
+                g_Threads = 1;
+            }
+        }
+        catch (...) 
+        {
+            cout << "Incorrect number of threads specified '" << cmd.GetOptionValue("t") <<"'. Using default value 1." << endl;
+            g_Threads = 1;
+        }
     }
 
     if (cmd.HasOption("h"))
