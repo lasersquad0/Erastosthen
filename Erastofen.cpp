@@ -7,9 +7,8 @@
 #include "DefaultParser.h"
 #include "HelpFormatter.h"
 #include "EratosthenesSieve.h"
+#include "Parameters.h"
 
-extern string g_PrimesFilename;
-extern int g_Threads;
 
 using namespace std;
 
@@ -58,24 +57,24 @@ int main(int argc, char* argv[])
 
     if (cmd.HasOption("p"))
     {
-        g_PrimesFilename = cmd.GetOptionValue("p", 0, Pre_Loaded_Primes_Filename);
+        Parameters::PRIMES_FILENAME = cmd.GetOptionValue("p", 0, Pre_Loaded_Primes_Filename);
     }
 
     if (cmd.HasOption("t"))
     {
         try
         {
-            g_Threads = stoi(cmd.GetOptionValue("t"));
-            if ( (g_Threads == 0) || (g_Threads > 25) )
+            Parameters::THREADS = stoi(cmd.GetOptionValue("t"));
+            if ( (Parameters::THREADS == 0) || (Parameters::THREADS > 25) )
             {
                 cout << "Number of threads is out of bounds (1...25)" << endl;
-                g_Threads = 1;
+                Parameters::THREADS = 1;
             }
         }
         catch (...) 
         {
             cout << "Incorrect number of threads specified '" << cmd.GetOptionValue("t") <<"'. Using default value 1." << endl;
-            g_Threads = 1;
+            Parameters::THREADS = 1;
         }
     }
 

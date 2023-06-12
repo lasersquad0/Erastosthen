@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <cassert>
 #include <mutex>
+#include <iostream>
+
 
 using namespace std;
 
@@ -17,7 +19,6 @@ private:
 	static const uint32_t WORD_MASK = BITS_IN_WORD - 1; // =63=0x3F
 
 	uint64_t arr[(Bits-1)/BITS_IN_WORD + 1];
-	//mutex mtx;
 
 //	bool get_bit(uint64_t word, uint32_t offset)
 //	{
@@ -27,14 +28,14 @@ private:
 //		return tmp == 1;
 //	}
 
-	uint64_t set_bit(uint64_t word, uint32_t offset, bool bit)
-	{
-		assert(offset < BITS_IN_WORD);
-		uint64_t mask = bit ? 0x01 : 0x00;
-		//mask <<= offset;
+	//uint64_t set_bit(uint64_t word, uint32_t offset, bool bit)
+	//{
+	//	assert(offset < BITS_IN_WORD);
+	//	uint64_t mask = bit ? 0x01 : 0x00;
+	//	//mask <<= offset;
 
-		return word | (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим заисать 0.
-	}
+	//	return word | (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим заисать 0.
+	//}
 
 public:
 	bool get(uint32_t index)
@@ -55,10 +56,7 @@ public:
 		uint64_t mask = (uint64_t)value;// ? 0x01 : 0x00;
 
 		arr[index2] |= (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим заисать 0.
-
-		//mtx.lock();
 		//arr[index2] = set_bit(arr[index2], offset, value);
-		//mtx.unlock();
 	}
 	 
 };
@@ -87,36 +85,36 @@ private:
 #endif // MY_BITSET
 
 	typedef mybitset* pbitset;
-	vector<pbitset>* segments;
+	pbitset* m_segments;
 
 	uint64_t begin;
 	uint64_t cpacity;
 	uint64_t sz;
+	uint32_t m_numOfSeg;
 
-	void addSegment()
-	{
-		auto seg = new mybitset();
-#ifdef VECTOR_BOOL
-		seg->assign(SEGMENT_SIZE, false);
-#endif
-		segments->push_back(seg);
-	}
+//	void addSegment()
+//	{
+//		auto seg = new mybitset();
+//#ifdef VECTOR_BOOL
+//		seg->assign(SEGMENT_SIZE, false);
+//#endif
+//		m_segments->push_back(seg);
+//	}
 
 public:
 	SegmentedArray(uint64_t start, uint64_t length)
 	{
-		const uint32_t numOfSeg = (uint32_t)(length / (uint64_t)SEGMENT_SIZE);
-		segments = new vector<pbitset>(); // (numOfSeg);
+		m_numOfSeg = (uint32_t)(length / (uint64_t)SEGMENT_SIZE);
+		
+		uint32_t remaining = (uint32_t)(length - ((uint64_t)m_numOfSeg * SEGMENT_SIZE));
+		
+		if (remaining > 0) m_numOfSeg++;
+		
+		m_segments = new pbitset[m_numOfSeg];
 
-		for (uint32_t i = 0; i < numOfSeg; ++i)
+		for (uint32_t i = 0; i < m_numOfSeg; ++i)
 		{
-			addSegment();
-		}
-
-		int remaining = (uint32_t)(length - ((uint64_t)numOfSeg * SEGMENT_SIZE));
-		if (remaining > 0)
-		{
-			addSegment();
+			m_segments[i] = new mybitset();
 		}
 
 		begin = start;
@@ -124,14 +122,15 @@ public:
 		sz = begin + cpacity;
 	}
 
+
 	~SegmentedArray()
 	{
-		for (uint32_t i = 0; i < segments->size(); ++i)
+		for (uint32_t i = 0; i < m_numOfSeg; ++i)
 		{
-			delete segments->at(i);
+			delete m_segments[i];
 		}
 
-		delete segments;
+		delete[] m_segments;
 	}
 
 	void set(uint64_t index, bool value)
@@ -144,10 +143,10 @@ public:
 		uint32_t segNo = (uint32_t)(index2 >> SEG_2POWER); // делим на SEGMENT_SIZE который есть 2^30
 		uint32_t offset = ((uint32_t)(index2) & OFFSET_MASK); //0x3fffffff
 
-		pbitset pb = segments->at(segNo);
+		pbitset pb = m_segments[segNo];
 		//assert(pb != NULL);
+
 		pb->set(offset, value);
-		
 	}
 
 	bool get(uint64_t index)
@@ -160,7 +159,7 @@ public:
 		uint32_t segNo = (uint32_t)(index2 >> SEG_2POWER); // делим на SEGMENT_SIZE который есть 2^30
 		uint32_t offset = ((uint32_t)(index2) & OFFSET_MASK); // 0x3fffffff
 		
-		pbitset pb = segments->at(segNo);
+		pbitset pb = m_segments[segNo];
 		return pb->get(offset);
 	}
 
@@ -168,7 +167,7 @@ public:
 
 	//uint64_t capacity() { return cpacity; }
 
-	//uint64_t segm() { return segments->size(); }
+	//uint64_t segm() { return m_segments->size(); }
 
 };
 

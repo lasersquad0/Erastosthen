@@ -1,13 +1,12 @@
 #pragma once
 
 #include <string>
+#include <windows.h>
+#include <synchapi.h>
 #include "PrimesFIO.h"
 #include "SegmentedArray.h"
+#include "Parameters.h"
 
-
-#define Pre_Loaded_Primes_Filename "primes - 0-1G.diffvar.bin"
-#define APP_NAME "Eratosthen"
-#define APP_EXE_NAME APP_NAME".exe"
 
 class invalid_cmd_option: public invalid_argument
 {
@@ -19,6 +18,36 @@ public:
 
 class EratosthenesSieve;
 void FindPrimesThread(EratosthenesSieve* es); // forward declaration
+
+class CriticalSection
+{
+public:
+	CriticalSection()
+	{
+		InitializeCriticalSection(&cs);
+	}
+
+	~CriticalSection()
+	{
+		DeleteCriticalSection(&cs);
+	}
+
+	void lock()
+	{
+		EnterCriticalSection(&cs);
+	}
+
+	void unlock()
+	{
+		LeaveCriticalSection(&cs);
+	}
+
+private:
+	CriticalSection(const CriticalSection&) = delete;
+	void operator=(const CriticalSection&) = delete;
+
+	CRITICAL_SECTION cs;
+};
 
 class EratosthenesSieve
 {
@@ -37,17 +66,16 @@ private:
 	static const uint64_t MAX_START_P = 18400ULL; // 18400P
 	static const uint64_t MAX_LEN   = 1'000'000'000'000ULL; // terabyte
 
-	char symFACTORstart = 'G'; // символьное представление Factor для значения real_start для формирования имени output файла.
-	char symFACTORlen = 'G'; // символьное представление Factor для значения real_length для формирования имени output файла.
+	char symFACTORstart = 'G'; // символьное представление Factor для значения m_realStart для формирования имени output файла.
+	char symFACTORlen = 'G'; // символьное представление Factor для значения m_realLength для формирования имени output файла.
 
 	uint64_t FACTORstart = FACTOR_G; // G по умолчанию по потом перепишется исходя из переданного диапазона.
 	uint64_t FACTORlen = FACTOR_G;
 	bool OPTIMUM_MODE = true;
 	PRIMES_FILE_FORMATS OUTPUT_FILE_TYPE; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
 
-	//string primesInFile;
-	uint64_t real_start;  
-	uint64_t real_length; // Длина промежутка на котором ищем простые
+	uint64_t m_realStart;  
+	uint64_t m_realLength; // Длина промежутка на котором ищем простые
 
 	SegmentedArray* m_bitArray;
 	mutex m_mutex;
@@ -55,6 +83,14 @@ private:
 	uint32_t m_readPrimes;
 	uint64_t* m_prldPrimes;
 	uint32_t m_delta;
+
+	typedef pair<uint64_t, uint64_t> rangePair;
+	typedef CriticalSection SyncType;
+	//typedef mutex SyncType;
+
+	typedef pair<SyncType*, rangePair> rangeItem;
+	vector<rangeItem> m_ranges;
+	
 
 	void CalculateOptimum();
 	void CalculateSimple();
@@ -71,11 +107,11 @@ private:
 	uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
 	uint32_t LoadPrimesFromBINDiffVar(string filename, uint64_t* primes, size_t len, uint64_t stopPrime);
 	
-	//uint32_t getArraySize();
 	string getOutputFilename();
 	uint64_t parseOption(string s, char* symFactor, uint64_t* factor);
 	void checkStartParam(string startValue);
-	//void parseMode(string s);
+	void defineRanges();
+	rangeItem* getRange(uint64_t v);
 	void printTime(string msg);
 	string millisecToStr(long long ms);
 	uint64_t nextPrime();

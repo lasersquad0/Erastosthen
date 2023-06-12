@@ -6,8 +6,6 @@
 #include <stdexcept>
 #include "EratosthenesSieve.h"
 
-string g_PrimesFilename = Pre_Loaded_Primes_Filename;
-int g_Threads = 1;
 
 using namespace std;
 
@@ -76,16 +74,16 @@ EratosthenesSieve::EratosthenesSieve(bool mode, PRIMES_FILE_FORMATS oFileType, u
 {
     OPTIMUM_MODE = mode;
     OUTPUT_FILE_TYPE = oFileType;
-    real_start = strt;
-    real_length = len;
+    m_realStart = strt;
+    m_realLength = len;
 }
 
 EratosthenesSieve::EratosthenesSieve() // initialize to DEFAULT values
 {
     OPTIMUM_MODE = true;
     OUTPUT_FILE_TYPE = txt;
-    real_start = DEFAULT_START;
-    real_length = DEFAULT_LENGTH;
+    m_realStart = DEFAULT_START;
+    m_realLength = DEFAULT_LENGTH;
     m_bitArray = nullptr;
     m_delta = 0;
     m_readPrimes = 0;
@@ -96,7 +94,7 @@ EratosthenesSieve::EratosthenesSieve() // initialize to DEFAULT values
 string EratosthenesSieve::getOutputFilename()
 {
     char buf[100];
-    sprintf_s(buf, 100, "primes - %llu%c-%llu%c", real_start/FACTORstart, symFACTORstart, real_length/FACTORlen, symFACTORlen);
+    sprintf_s(buf, 100, "primes - %llu%c-%llu%c", m_realStart/FACTORstart, symFACTORstart, m_realLength/FACTORlen, symFACTORlen);
     
     string fname = buf;
     switch (OUTPUT_FILE_TYPE)
@@ -129,6 +127,8 @@ void FindPrimesThread(EratosthenesSieve* es)
     es->m_mutex.unlock();
 
     uint64_t currPrime;
+    uint64_t len = es->m_bitArray->size();
+
     while ((currPrime = es->nextPrime()) != NO_MORE_PRIMES)
     {
         /*if (i > percentCounter)
@@ -139,13 +139,13 @@ void FindPrimesThread(EratosthenesSieve* es)
 
         //uint64_t currPrime = prldPrimes[i];
 
-        uint64_t begin = es->real_start % currPrime;
+        uint64_t begin = es->m_realStart % currPrime;
         //long begin = (REAL_START/currPrime)*currPrime;
         //if(begin < REAL_START) begin += currPrime;
         if (begin > 0)
-            begin = es->real_start - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
+            begin = es->m_realStart - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
         else
-            begin = es->real_start;
+            begin = es->m_realStart;
 
         if (begin % 2 == 0) begin += currPrime; // TODO может быстрее (begin&0x01)==0 четные числа выброшены из массива поэтому берем следующее кратное currPrime, оно будет точно нечетное
 
@@ -154,13 +154,21 @@ void FindPrimesThread(EratosthenesSieve* es)
 
         j = (begin - 1) / 2; //нечетное переводим в индекс уплотненного массива
 
-        uint64_t len = es->m_bitArray->size(); // TODO вынести за пределы цикла?
+        auto range = es->getRange(j);
+        if (range != nullptr)
+            range->first->lock();
+
         while (j < len)
         {
-            es->m_mutex.lock();
             es->m_bitArray->set(j, true);
-            es->m_mutex.unlock();
             j += currPrime; // здесь должен быть именно currPrime а не primeIndex
+            if (j > range->second.second)
+            {
+                range->first->unlock();
+                range = es->getRange(j);
+                if(range != nullptr) // range can be null one time when j becomes bigger than len in this loop.  
+                    range->first->lock();
+            }
         }
     }
 
@@ -172,13 +180,13 @@ void FindPrimesThread(EratosthenesSieve* es)
 uint64_t EratosthenesSieve::nextPrime()
 {
     //const lock_guard<mutex> lock(m_mutex);
-    static uint64_t percent(m_delta);
+    static uint64_t percent(0);
     static atomic_uint index(1);
 
     if (index > percent)
     {
         //cout << "\rProgress ... " << setw(7) << setprecision(4) << (float)(100 * percent) / (float)m_readPrimes /*100 * (float)index / m_loadedPrimes*/ << "%";
-        cout << "\rProgress ... " << percent/m_readPrimes << "%";
+        cout << "\rProgress ... " << percent/m_readPrimes << "%      ";
         percent += m_delta;
     }
 
@@ -186,7 +194,7 @@ uint64_t EratosthenesSieve::nextPrime()
         return m_prldPrimes[index.fetch_add(1)];
     
 
-    cout << "\r                              \r"; // cleaning up progress line of text
+    cout << "\r                                \r"; // cleaning up progress line of text
 
     return NO_MORE_PRIMES;
 }
@@ -216,16 +224,16 @@ void EratosthenesSieve::CalculateOptimum()
 {
     auto start1 = chrono::high_resolution_clock::now();
 
-    uint64_t START = (real_start) / 2ULL; // Переводим в индекс в уплотненном массиве. Не храним четные элементы так как они делятся на 2 по умолчанию.
-    uint64_t LENGTH = (real_length) / 2ULL; // переводим в индекс
+    uint64_t START = (m_realStart) / 2ULL; // Переводим в индекс в уплотненном массиве. Не храним четные элементы так как они делятся на 2 по умолчанию.
+    uint64_t LENGTH = (m_realLength) / 2ULL; // переводим в индекс
 
     printf("Calculating prime numbers with Eratosfen algorithm.\n");
-    cout << "Start: " << real_start << endl;
-    cout << "Length: " << real_length << endl;
+    cout << "Start: " << m_realStart << endl;
+    cout << "Length: " << m_realLength << endl;
 
     m_bitArray = new SegmentedArray(START, LENGTH);
 
-    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(real_start + real_length)); // max простое число нужное нам для расчетов переданного диапазона
+    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(m_realStart + m_realLength)); // max простое число нужное нам для расчетов переданного диапазона
     uint64_t numPrimesLessThan = maxPrimeToLoad / log(maxPrimeToLoad); // примерное кол-во простых чисел нужное нам для расчетов переданного диапазона
     cout << "There are *approximately* " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << "." << endl;
 
@@ -235,12 +243,12 @@ void EratosthenesSieve::CalculateOptimum()
 
     m_prldPrimes = new uint64_t[prldPrimesSize];
 
-    m_readPrimes = LoadPrimesFromBINDiffVar(g_PrimesFilename, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+    m_readPrimes = LoadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
     cout << "Number of primes actually read from file: " << m_readPrimes << endl;
 
     if (m_prldPrimes[m_readPrimes - 1] < maxPrimeToLoad) // считали недостаточно primes. либо в файле с primes недостаточно primes либо размер массива посчитали неправилино (маловероятно)
     //if(readPrimes < prldPrimesSize)
-        cout << "WARNING: There might be not enough primes in a file '" << g_PrimesFilename << "' for calculation new primes!" << endl;
+        cout << "WARNING: There might be not enough primes in a file '" << Parameters::PRIMES_FILENAME << "' for calculation new primes!" << endl;
 
     auto stop = chrono::high_resolution_clock::now();
     cout << "Primes loaded in " << millisecToStr(chrono::duration_cast<chrono::milliseconds>(stop - start1).count()) << endl;
@@ -253,12 +261,14 @@ void EratosthenesSieve::CalculateOptimum()
 
     printf("Calculation started.\n");
 
-    if (g_Threads > 1)
+    if (Parameters::THREADS > 1)
     {
-        FindPrimesInThreads(g_Threads - 1); // waits untill all threads are finished
+        FindPrimesInThreads(Parameters::THREADS - 1); // waits untill all threads are finished
     }
     else
     {
+        uint64_t len = m_bitArray->size();
+
         for (uint32_t i = 1; i < m_readPrimes; ++i)  //%%%%% пропускаем число 2 начинаем с 3
         {
             if (i > percentCounter)
@@ -269,13 +279,13 @@ void EratosthenesSieve::CalculateOptimum()
 
             uint64_t currPrime = m_prldPrimes[i];
 
-            uint64_t begin = real_start % currPrime;
+            uint64_t begin = m_realStart % currPrime;
             //long begin = (REAL_START/currPrime)*currPrime;
             //if(begin < REAL_START) begin += currPrime;
             if (begin > 0)
-                begin = real_start - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
+                begin = m_realStart - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
             else
-                begin = real_start;
+                begin = m_realStart;
 
             if (begin % 2 == 0) begin += currPrime; // может быстрее (begin&0x01)==0 четные числа выброшены из массива поэтому берем следующее кратное currPrime, оно будет точно нечетное
 
@@ -284,7 +294,6 @@ void EratosthenesSieve::CalculateOptimum()
 
             j = (begin - 1) / 2; //нечетное переводим в индекс уплотненного массива
 
-            uint64_t len = m_bitArray->size();
             while (j < len)
             {
                 m_bitArray->set(j, true);
@@ -293,8 +302,8 @@ void EratosthenesSieve::CalculateOptimum()
         }
     }
 
-    if (real_start == 0) m_bitArray->set(0, true); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
-    if (real_start == 1) m_bitArray->set(0, true); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
+    if (m_realStart == 0) m_bitArray->set(0, true); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
+    if (m_realStart == 1) m_bitArray->set(0, true); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
 
     cout << endl;
 
@@ -331,13 +340,13 @@ void EratosthenesSieve::CalculateSimple()
     auto start1 = chrono::high_resolution_clock::now();
 
     printf("Calculating prime numbers with Eratosfen algorithm.\n");
-    cout << "Start: " << real_start << endl;
-    cout << "Length: " << real_length << endl;
+    cout << "Start: " << m_realStart << endl;
+    cout << "Length: " << m_realLength << endl;
 
-    auto sarr = new SegmentedArray(real_start, real_length);
+    auto sarr = new SegmentedArray(m_realStart, m_realLength);
     //System.out.format("Big array capacity %,d\n", sarr.capacity());
 
-    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(real_start + real_length)); // max простое число нужное нам для расчетов переданного диапазона
+    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(m_realStart + m_realLength)); // max простое число нужное нам для расчетов переданного диапазона
     uint64_t numPrimesLessThan = maxPrimeToLoad / log(maxPrimeToLoad); // примерное кол-во простых чисел нужное нам для расчетов переданного диапазона
     cout << "There are " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << "." << endl;
 
@@ -347,12 +356,12 @@ void EratosthenesSieve::CalculateSimple()
 
     uint64_t* preloadedPrimes = new uint64_t[prldPrimesSize];
 
-    uint32_t readPrimes = LoadPrimesFromBINDiffVar(g_PrimesFilename, preloadedPrimes, prldPrimesSize, maxPrimeToLoad);
+    uint32_t readPrimes = LoadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, preloadedPrimes, prldPrimesSize, maxPrimeToLoad);
     cout << "Number of primes actually read from file: " << readPrimes << endl;
 
     if (preloadedPrimes[readPrimes - 1] < maxPrimeToLoad)
     //if (readPrimes < arrSize)
-        cout << "WARNING: There might be not enough primes in a file '" << g_PrimesFilename << "' for calculation new primes!" << endl;
+        cout << "WARNING: There might be not enough primes in a file '" << Parameters::PRIMES_FILENAME << "' for calculation new primes!" << endl;
 
     auto stop = chrono::high_resolution_clock::now();
     cout << "Primes loaded in " << millisecToStr(chrono::duration_cast<chrono::milliseconds>(stop - start1).count()) << endl;
@@ -375,11 +384,11 @@ void EratosthenesSieve::CalculateSimple()
 
            uint64_t currPrime = preloadedPrimes[i];
 
-           uint64_t begin = real_start % currPrime;
+           uint64_t begin = m_realStart % currPrime;
            if (begin > 0)
-               begin = real_start - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
+               begin = m_realStart - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
            else
-               begin = real_start;
+               begin = m_realStart;
 
            uint64_t j = currPrime * currPrime; // начинаем вычеркивать составные с p^2 потому что все варианты вида p*3, p*5, p*7 уже перебрали ранее в предыдущих итерациях. формула это p^2 пересчитанное в спец индекс
            j = max(begin, j);
@@ -393,9 +402,9 @@ void EratosthenesSieve::CalculateSimple()
        }
        
 
-    if (real_start == 0) 
+    if (m_realStart == 0) 
         sarr->set(0, true), sarr->set(1, true); // заглушка если генерим числа начиная с 0. что бы '0' не попало в простые
-    if (real_start == 1) 
+    if (m_realStart == 1) 
         sarr->set(1, true); // заглушка если генерим числа начиная с 1. что бы '1' не попало в простые
 
     cout << endl;
@@ -411,11 +420,11 @@ void EratosthenesSieve::CalculateSimple()
 
     switch (OUTPUT_FILE_TYPE)
     {
-    case txt:       primesSaved = saveAsTXTSimpleMode(real_start, sarr, outputFilename, false);break;
-    case txtdiff:   primesSaved = saveAsTXTSimpleMode(real_start, sarr, outputFilename, true); break;
-    case bin:       primesSaved = saveAsBINSimpleMode(real_start, sarr, outputFilename, false);break;
-    case bindiff:   primesSaved = saveAsBINSimpleMode(real_start, sarr, outputFilename, true); break;
-    case bindiffvar:primesSaved = saveAsBINDiffVarSimpleMode(real_start, sarr, outputFilename);break;
+    case txt:       primesSaved = saveAsTXTSimpleMode(m_realStart, sarr, outputFilename, false);break;
+    case txtdiff:   primesSaved = saveAsTXTSimpleMode(m_realStart, sarr, outputFilename, true); break;
+    case bin:       primesSaved = saveAsBINSimpleMode(m_realStart, sarr, outputFilename, false);break;
+    case bindiff:   primesSaved = saveAsBINSimpleMode(m_realStart, sarr, outputFilename, true); break;
+    case bindiffvar:primesSaved = saveAsBINDiffVarSimpleMode(m_realStart, sarr, outputFilename);break;
     }
 
     cout << "Primes " << primesSaved << " were saved to file '" << outputFilename << "'." << endl;
@@ -859,18 +868,21 @@ void EratosthenesSieve::parseParams(string mode, string oft, string start, strin
     OPTIMUM_MODE = (mode == "o");
     
     checkStartParam(start); // generates an exception is anything wrong with start param value
-    real_start = parseOption(start, &symFACTORstart, &FACTORstart);
+    m_realStart = parseOption(start, &symFACTORstart, &FACTORstart);
 
-    real_length = parseOption(len, &symFACTORlen, &FACTORlen); 
-    if (real_length > MAX_LEN)
+    // no need to call checkStartParam() for len, see below
+    m_realLength = parseOption(len, &symFACTORlen, &FACTORlen); 
+    
+    if (m_realLength > MAX_LEN)
         throw invalid_argument("Length argument is out of bounds (1...1000G)");
 
-    trimStr(oft);
-    transform(oft.begin(), oft.end(), oft.begin(), ::toupper);
+    trimAndUpper(oft);
 
     OUTPUT_FILE_TYPE = STR_TO_FORMAT(oft);
     if(OUTPUT_FILE_TYPE == none)
         throw invalid_argument("Error: Unsupported output file type specified.");
+
+    defineRanges();
 }
 
 void EratosthenesSieve::checkStartParam(string opt)
@@ -878,7 +890,7 @@ void EratosthenesSieve::checkStartParam(string opt)
     // remove any leading and traling spaces, just in case.
     trimAndUpper(opt);
     
-    char sFactor = opt.at(opt.length() - 1); // we need symFACTOR later for output filename
+    char sFactor = opt.at(opt.length() - 1); 
 
     if (fSymbols.find(sFactor) == string::npos)
         throw invalid_argument("Error: Incorrect command line parameter '" + opt + "'.\n");
@@ -908,8 +920,46 @@ void EratosthenesSieve::checkStartParam(string opt)
 
 }
 
+void EratosthenesSieve::defineRanges()
+{
+    uint64_t START = m_realStart / 2ULL; // Переводим в индекс в уплотненном массиве. Не храним четные элементы так как они делятся на 2 по умолчанию.
+    uint64_t LENGTH = m_realLength / 2ULL; // переводим в индекс
+    int workingThreads = Parameters::THREADS - 1;
 
-// парсит одно значение либо real_start либо real_length в формате с Factor модификаторами G, T, P
+    if (workingThreads > 1)
+    { 
+        uint64_t k = 1;
+        uint64_t rangesCount = workingThreads * k;
+        uint64_t rangeLen = LENGTH / rangesCount;
+        
+        mutex* m = new mutex();
+
+        m_ranges.push_back(rangeItem(new SyncType(), rangePair(START, START + rangeLen - 1))); //TODO this needs a call delete somewhere to free memory
+
+        uint64_t currRange = rangeLen;
+
+        for (size_t i = 1; i < rangesCount - 1; i++)
+        {
+            m_ranges.push_back(rangeItem(new SyncType(), rangePair(START + currRange, START + currRange + rangeLen - 1)));
+            currRange += rangeLen;
+        }
+
+        m_ranges.push_back(rangeItem(new SyncType(), rangePair(START + currRange, START + LENGTH - 1)));
+    }
+}
+
+EratosthenesSieve::rangeItem* EratosthenesSieve::getRange(uint64_t v)
+{
+    for (size_t i = 0; i < m_ranges.size(); i++)
+    {
+        rangePair& p = m_ranges[i].second;
+        if ((v >= p.first) && (v <= p.second))
+            return &m_ranges[i];
+    }
+    return nullptr;
+}
+
+// парсит одно значение либо m_realStart либо m_realLength в формате с Factor модификаторами G, T, P
 // примеры: 100G, 5T, 20000G, 400M, 0B
 uint64_t EratosthenesSieve::parseOption(string opt, char* symFactor, uint64_t* factor)
 {
