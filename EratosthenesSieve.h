@@ -85,8 +85,8 @@ private:
 	uint32_t m_delta;
 
 	typedef pair<uint64_t, uint64_t> rangePair;
-	typedef CriticalSection SyncType;
-	//typedef mutex SyncType;
+	//typedef CriticalSection SyncType;
+	typedef mutex SyncType;
 
 	typedef pair<SyncType*, rangePair> rangeItem;
 	vector<rangeItem> m_ranges;
