@@ -54,12 +54,12 @@ P - petabytes
 
 Examples for command lines arguments:
 ```
-Erastofen.exe -s txt 0g 10g           - 'simple' mode, txt file format, seeks primes in a range 0...10G 
+Erastofen.exe -s txt 0B 10g           - 'simple' mode, txt file format, seeks primes in a range 0...10G 
 Erastofen.exe -o bin 900G 100G        - 'optimised' mode, bin file format, seeks primes from 900G to 1000G
 Erastofen.exe -o txtdif 100T 10G      - 'optimised' mode, txtdiff file format, START=100'000'000'000 and LENGTH=10'000'000'000
-Erastofen.exe -s bindiff 5T 50G       - 'simple' mode, bindiff file format, START=5T and LENGTH=50G (5T...5T+50G)
+Erastofen.exe -s bindiff 5T 50g       - 'simple' mode, bindiff file format, START=5T and LENGTH=50G (5T...5T+50G)
 Erastofen.exe -o bindiffvar 20P 1G    - 'optimised' mode, bindiffvar file format, START=20T and LENGTH=1G
-Erastofen.exe -t 5 bindiffvar 20P 1G  - the same as above but primes generation will be performed in 4 separate threads + 1 main and controling thread. Total is 5.
+Erastofen.exe -t 5 -o bindiffvar 20P 1G  - the same as above but primes generation will be performed in 4 separate threads + 1 main and controling thread. Total is 5.
 Erastofen.exe -t 5 -p "primes - 3G.diffvar.bin" -o bindiffvar 20P 1G   - the same as above but primes will be preloaded from specified file instead of default one.
 Erastofen.exe -o 0P 1G                - if you would like to generate primes starting from zero you can use any modificator for START argument. Value without modificator will generate an error.
 ```
