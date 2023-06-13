@@ -37,11 +37,11 @@ Is most cases distance is even less than 255. It means that if distance is less 
 That idea allows us to create even more 'compressed' format of storing such numbers. **.bindiffvar** format uses 'variable length' coding to store difference between two consequitive primes numbers.
 it makes file with primes numbers 10 times less in size than txt format.
 
-To specify file format use predefined names: txt, txtdiff, bindiff, bindiffvar as the first argument (<filetype>) of either 'o' or 's' option.
+To specify file format use predefined names: txt, txtdiff, bindiff, bindiffvar as the first argument (filetype) of either 'o' or 's' option.
 
 ## Start and Length
-Second and third arguments define START and LENGTH parameters of generating primes.
-You can use factor modificators to make it more convenient to define range.
+Second and third arguments define START and LENGTH range parameters for generating primes.
+You can use factor modificators (case insensitive) to make it more convenient to define range.
 B - bytes
 
 M - megabytes
@@ -52,15 +52,14 @@ T - terabytes
 
 P - petabytes
 
-
 Examples for command lines arguments:
 ```
-Erastofen.exe c1            - 'compressed' mode, txt file format, START and LENGTH - default hardcoded values are used. START=20T LENGTH=10G
-Erastofen.exe c2 900G       - 'compressed' mode, txtdiff file format, START and LENGTH - default hardcoded values are used.
-Erastofen.exe c4 100G 10G   - 'compressed' mode, bindiff file format, START=100'000'000'000 and LENGTH=10'000'000'000
-Erastofen.exe s3 5T 50G     - 'simple' mode, bin file format, START=5T and LENGTH=50G
-Erastofen.exe s1 20000G 1G  - 'simple' mode, txt file format, START=20T and LENGTH=1G
-Erastofen.exe c2 100M 100M  - 'compressed' mode, txtdiff file format, START=100'000'000 and LENGTH=100'000'000
-Erastofen.exe c5 1000B 1G   - 'compressed' mode, bindiffvar file format, START=1000 and LENGTH=1G
-Erastofen.exe c5 0G 1G      - 'compressed' mode, bindiff file format, START=0 and LENGTH=1G
+Erastofen.exe -s txt 0g 10g           - 'simple' mode, txt file format, seeks primes in a range 0...10G 
+Erastofen.exe -o bin 900G 100G        - 'optimised' mode, bin file format, seeks primes from 900G to 1000G
+Erastofen.exe -o txtdif 100T 10G      - 'optimised' mode, txtdiff file format, START=100'000'000'000 and LENGTH=10'000'000'000
+Erastofen.exe -s bindiff 5T 50G       - 'simple' mode, bindiff file format, START=5T and LENGTH=50G (5T...5T+50G)
+Erastofen.exe -o bindiffvar 20P 1G    - 'optimised' mode, bindiffvar file format, START=20T and LENGTH=1G
+Erastofen.exe -t 5 bindiffvar 20P 1G  - the same as above but primes generation will be performed in 4 separate threads + 1 main and controling thread. Total is 5.
+Erastofen.exe -t 5 -p "primes - 3G.diffvar.bin" -o bindiffvar 20P 1G   - the same as above but primes will be preloaded from specified file instead of default one.
+Erastofen.exe -o 0P 1G                - if you would like to generate primes starting from zero you can use any modificator for START argument. Value without modificator will generate an error.
 ```
