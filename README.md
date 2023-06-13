@@ -1,4 +1,4 @@
-# Eratosfen tool
+# Eratosfen primes generating tool
 This is a tool that implements Eratosthen algorithm of generating prime numbers.
 This implementation is able to generate numbers in the range START-LENGTH specified in command line.
 
@@ -14,7 +14,7 @@ Eratosthen usage:
 Options 's' or 'o' are mandatory. All the others are optional.
 All three arguament of options 's' and 'o' must be specified. No deefault values here.
 
-## Generation mode
+## Generation modes
 There are two modes: simple ('s') and optimised ('o').
 Eratosthen algorythm requires much memory for its implementation.
 Optimised mode is an experimental, it requires two times less memory than simple mode.
