@@ -85,8 +85,8 @@ private:
 	uint32_t m_delta;
 
 	typedef pair<uint64_t, uint64_t> rangePair;
-	//typedef CriticalSection SyncType;
-	typedef mutex SyncType;
+	typedef CriticalSection SyncType;
+	//typedef mutex SyncType;
 
 	typedef pair<SyncType*, rangePair> rangeItem;
 	vector<rangeItem> m_ranges;
@@ -124,7 +124,6 @@ public:
 	EratosthenesSieve(bool mode, PRIMES_FILE_FORMATS oFileType, uint64_t strt, uint64_t len, string primesInputFile = Pre_Loaded_Primes_Filename);
 	EratosthenesSieve();
 
-	//void parseCmdLine(int argc, char* argv[]);
 	void parseParams(string mode, string oft, string start, string len);
 	void printUsage();
 	void Calculate();

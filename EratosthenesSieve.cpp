@@ -721,11 +721,14 @@ uint64_t EratosthenesSieve::saveAsBINDiffVarOptimumMode(uint64_t start, Segmente
 
             prime = 2 * i + 1;
 
-            uint64_t diff = (prime - lastPrime); // разница всегда четная. поэтому можем хранить половину значения. больше значений уместится в 1 байт.
+            uint64_t diff = (prime - lastPrime); 
 
-            if (lastPrime > 2) diff /= 2;
+            if (lastPrime > 2) diff /= 2;  // разница всегда четная. поэтому можем хранить половину значения. больше значений уместится в 1 байт.
 
             size_t len = var_len_encode(buf, diff);
+            
+            assert(len > 0);
+
             f.write((char*)buf, len);
 
             lastPrime = prime;
@@ -748,7 +751,6 @@ uint64_t EratosthenesSieve::saveAsBINDiffVarSimpleMode(uint64_t start, Segmented
     uint64_t cntPrimes = 0;
     uint64_t lastPrime = 0;
     uint8_t buf[9];
-    //uint64_t prime;
 
     for (uint64_t i = start; i < sarr->size(); i++)
     {
@@ -928,11 +930,9 @@ void EratosthenesSieve::defineRanges()
 
     if (workingThreads > 1)
     { 
-        uint64_t k = 1;
+        uint64_t k = 3;
         uint64_t rangesCount = workingThreads * k;
         uint64_t rangeLen = LENGTH / rangesCount;
-        
-        mutex* m = new mutex();
 
         m_ranges.push_back(rangeItem(new SyncType(), rangePair(START, START + rangeLen - 1))); //TODO this needs a call delete somewhere to free memory
 
@@ -959,7 +959,7 @@ EratosthenesSieve::rangeItem* EratosthenesSieve::getRange(uint64_t v)
     return nullptr;
 }
 
-// парсит одно значение либо m_realStart либо m_realLength в формате с Factor модификаторами G, T, P
+// парсит одно значение либо m_realStart либо m_realLength в формате с Factor модификаторами B, M, G, T, P
 // примеры: 100G, 5T, 20000G, 400M, 0B
 uint64_t EratosthenesSieve::parseOption(string opt, char* symFactor, uint64_t* factor)
 {
