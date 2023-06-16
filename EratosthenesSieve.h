@@ -6,7 +6,8 @@
 #include "PrimesFIO.h"
 #include "SegmentedArray.h"
 #include "Parameters.h"
-
+#include "ProgressPrinter.h"
+#include "CriticalSection.h"
 
 class invalid_cmd_option: public invalid_argument
 {
@@ -19,37 +20,9 @@ public:
 class EratosthenesSieve;
 void FindPrimesThread(EratosthenesSieve* es); // forward declaration
 
-class CriticalSection
-{
-public:
-	CriticalSection()
-	{
-		InitializeCriticalSection(&cs);
-	}
 
-	~CriticalSection()
-	{
-		DeleteCriticalSection(&cs);
-	}
 
-	void lock()
-	{
-		EnterCriticalSection(&cs);
-	}
-
-	void unlock()
-	{
-		LeaveCriticalSection(&cs);
-	}
-
-private:
-	CriticalSection(const CriticalSection&) = delete;
-	void operator=(const CriticalSection&) = delete;
-
-	CRITICAL_SECTION cs;
-};
-
-class EratosthenesSieve
+class EratosthenesSieve: public ProgressPrinter
 {
 private:
 	friend void FindPrimesThread(EratosthenesSieve* es);
@@ -78,11 +51,10 @@ private:
 	uint64_t m_realLength; // Длина промежутка на котором ищем простые
 
 	SegmentedArray* m_bitArray;
-	mutex m_mutex;
+	
 	atomic_uint m_threadIDs = 0;
 	uint32_t m_readPrimes;
 	uint64_t* m_prldPrimes;
-	uint32_t m_delta;
 
 	typedef pair<uint64_t, uint64_t> rangePair;
 	typedef CriticalSection SyncType;
@@ -90,7 +62,6 @@ private:
 
 	typedef pair<SyncType*, rangePair> rangeItem;
 	vector<rangeItem> m_ranges;
-	
 
 	void CalculateOptimum();
 	void CalculateSimple();
