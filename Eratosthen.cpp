@@ -20,8 +20,8 @@ struct MyGroupSeparator : numpunct<char>
 
 void defineOptions(COptionsList& options)
 {
-    options.AddOption("s", "simple", "generate primes using simple Eratosthen sieve mode", 3);
-    options.AddOption("o", "optimum", "generate primes using optimized Eratosthen sieve mode", 3);
+    options.AddOption("s", "simple", "generate primes using simple Eratosthenes sieve mode", 3);
+    options.AddOption("o", "optimum", "generate primes using optimized Eratosthenes sieve mode", 3);
     options.AddOption("p", "primesfile", string("file with primes to preload, if not specified '") + Pre_Loaded_Primes_Filename + "' file is used", 1);
     options.AddOption("t", "threads", "use specified number of threads during primes checking", 1);
     options.AddOption("h", "help", "show help", 0);

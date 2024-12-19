@@ -10,16 +10,16 @@
 
 using namespace std;
 
-template<uint32_t Bits>
+//template<uint64_t Bits>
 class MyBitset
 {
 private:
-	static const uint32_t WORD_2POWER = 6; // 2^6==sizeof(uint64_t)*8 = 64;
-	static const uint32_t BITS_IN_WORD = 1 << WORD_2POWER; //==sizeof(uint64_t)*8 = 64;
-	static const uint32_t WORD_MASK = BITS_IN_WORD - 1; // =63=0x3F
+	static const uint64_t WORD_2POWER = 6ULL; // 2^6==sizeof(uint64_t)*8 = 64;
+	static const uint64_t BITS_IN_WORD = 1ULL << WORD_2POWER; //==sizeof(uint64_t)*8 = 64;
+	static const uint64_t WORD_MASK = BITS_IN_WORD - 1ULL; // =63=0x3F
 
-	uint64_t arr[(Bits-1)/BITS_IN_WORD + 1];
-
+	uint64_t* arr; // [(Bits - 1ULL) / BITS_IN_WORD + 1ULL] ;
+	
 //	bool get_bit(uint64_t word, uint32_t offset)
 //	{
 //		assert(offset < WORD_IN_BITS);
@@ -38,94 +38,97 @@ private:
 	//}
 
 public:
-	bool get(uint32_t index)
-	{
-		uint32_t index2 = index >> WORD_2POWER; //index / BITS_IN_WORD;
-		uint32_t offset = index & WORD_MASK; //index % BITS_IN_WORD;
-
-		return ((arr[index2] >> offset) & 0x01) == 1;
+	MyBitset(uint64_t BitsCount) 
+	{ 
+		arr = new uint64_t[(BitsCount - 1ULL) / BITS_IN_WORD + 1ULL];
 	}
 
-	void set(uint32_t index, bool value)
+	~MyBitset()
+	{
+		delete[] arr;
+	}
+
+	bool get(uint64_t index)
+	{
+		uint64_t index2 = index >> WORD_2POWER; // index/BITS_IN_WORD;
+		uint64_t offset = index & WORD_MASK; // index % BITS_IN_WORD;
+
+		return ((arr[index2] >> offset) & 0x01) == 1ULL;
+	}
+
+	void set(uint64_t index, bool value)
 	{
 		assert(value); // only true is allowed
 
-		uint32_t index2 = index >> WORD_2POWER; //index / BITS_IN_WORD;
-		uint32_t offset = index & WORD_MASK; //index % BITS_IN_WORD;
+		uint64_t index2 = index >> WORD_2POWER; // index/BITS_IN_WORD;
+		uint64_t offset = index & WORD_MASK; // index % BITS_IN_WORD;
 
-		uint64_t mask = (uint64_t)value;// ? 0x01 : 0x00;
+		uint64_t mask = (uint64_t)value; // ? 0x01 : 0x00;
 
-		arr[index2] |= (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим заисать 0.
+		arr[index2] |= (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим записать 0.
 		//arr[index2] = set_bit(arr[index2], offset, value);
 	}
 	 
 };
 
+// TODO may be we dont need segmented array. Check if it is possible to index and allocate arrays greater than 4G in C++.
 class SegmentedArray
 {
 private:
-	static const uint32_t SEG_2POWER = 30;
-	static const uint32_t SEGMENT_SIZE = 1 << SEG_2POWER; //1_073_741_824; //2^30 - что бы можно было эффективно делать деление сдвигом вправо на 30 бит
-	static const uint32_t OFFSET_MASK = SEGMENT_SIZE - 1; // 0x3FFFFFFF
+	//static const uint64_t SEG_2POWER = 37ULL; // 128G maximum segment size to cover usual Length=100G //30;
+	//static const uint64_t SEGMENT_SIZE = 1ULL << SEG_2POWER; //128G  //1_073_741_824; //2^30 - что бы можно было эффективно делать деление сдвигом вправо на 30 бит
+	//static const uint64_t OFFSET_MASK = SEGMENT_SIZE - 1ULL; // 0x3FFFFFFF
 
 //#define VECTOR_BOOL
 //#define	STD_BITSET
 #define	MY_BITSET
+//#define CHECK_ARRAY_BOUNDS
 
 #ifdef STD_BITSET
-	typedef bitset<SEGMENT_SIZE> mybitset;
+	typedef bitset<SEGMENT_SIZE> mybitset_t;
 #endif // STD_BITSET
 
 #ifdef VECTOR_BOOL
-	typedef vector<bool> mybitset;
+	typedef vector<bool> mybitset_t;
 #endif // VECTOR_BOOL
 
 #ifdef MY_BITSET
-	typedef MyBitset<SEGMENT_SIZE> mybitset;
+	typedef MyBitset/*<SEGMENT_SIZE>*/ mybitset_t;
 #endif // MY_BITSET
 
-	typedef mybitset* pbitset;
+	typedef mybitset_t* pbitset;
 	pbitset* m_segments;
 
-	uint64_t begin;
-	uint64_t cpacity;
-	uint64_t sz;
-	uint32_t m_numOfSeg;
-
-//	void addSegment()
-//	{
-//		auto seg = new mybitset();
-//#ifdef VECTOR_BOOL
-//		seg->assign(SEGMENT_SIZE, false);
-//#endif
-//		m_segments->push_back(seg);
-//	}
+	uint64_t m_begin;
+	uint64_t m_cpacity;
+	uint64_t m_sz;
+	uint64_t m_numOfSeg;
 
 public:
 	SegmentedArray(uint64_t start, uint64_t length)
 	{
-		m_numOfSeg = (uint32_t)(length / (uint64_t)SEGMENT_SIZE);
+		m_numOfSeg = length / length;//SEGMENT_SIZE;
 		
-		uint32_t remaining = (uint32_t)(length - ((uint64_t)m_numOfSeg * SEGMENT_SIZE));
+		uint64_t remaining = (length - (m_numOfSeg * length/*SEGMENT_SIZE*/));
 		
 		if (remaining > 0) m_numOfSeg++;
 		
 		m_segments = new pbitset[m_numOfSeg];
 
-		for (uint32_t i = 0; i < m_numOfSeg; ++i)
+		for (uint64_t i = 0; i < m_numOfSeg; ++i)
 		{
-			m_segments[i] = new mybitset();
+			m_segments[i] = new mybitset_t(length);
 		}
 
-		begin = start;
-		cpacity = length;
-		sz = begin + cpacity;
+		m_begin = start;
+		m_cpacity = length;
+		m_sz = m_begin + m_cpacity;
 	}
 
 
 	~SegmentedArray()
 	{
-		for (uint32_t i = 0; i < m_numOfSeg; ++i)
+		for (uint64_t i = 0; i < m_numOfSeg; ++i)
 		{
 			delete m_segments[i];
 		}
@@ -135,37 +138,44 @@ public:
 
 	void set(uint64_t index, bool value)
 	{
-		if (index >= sz) throw invalid_argument("Index out of bounds");
+#ifdef CHECK_ARRAY_BOUNDS
+		if (index >= m_sz) throw invalid_argument("Index out of bounds");
+		if (index < m_begin) throw invalid_argument("Index out of bounds"); //return; //do nothing with indexes from 0...m_begin. Emulate that those values are present in an array
+#endif
+		uint64_t index2 = index - m_begin;
+		//uint64_t segNo = index2 >> SEG_2POWER; // делим на SEGMENT_SIZE который есть 2^35 //30
+		//uint64_t offset = index2 & OFFSET_MASK; // 0x3fffffff(еще больше f здесь)
 
-		if (index < begin) throw invalid_argument("Index out of bounds"); //return; //do nothing with indexes from 0...begin. Emulate that those values are present in an array
+		pbitset pb = m_segments[0/*segNo*/];
+		assert(pb != nullptr);
 
-		uint64_t index2 = index - begin;
-		uint32_t segNo = (uint32_t)(index2 >> SEG_2POWER); // делим на SEGMENT_SIZE который есть 2^30
-		uint32_t offset = ((uint32_t)(index2) & OFFSET_MASK); //0x3fffffff
-
-		pbitset pb = m_segments[segNo];
-		//assert(pb != NULL);
-
-		pb->set(offset, value);
+		pb->set(index2/*offset*/, value);
 	}
 
 	bool get(uint64_t index)
 	{
-		if (index >= sz) throw invalid_argument("Index out of bounds");
+#ifdef CHECK_ARRAY_BOUNDS
+		if (index >= m_sz) throw invalid_argument("Index out of bounds");
+		if (index < m_begin) throw invalid_argument("Index out of bounds");  //return false; //do nothing with indexes from 0...m_begin. Emulate that those values are present in an array
+#endif
 
-		if (index < begin) throw invalid_argument("Index out of bounds");  //return false; //do nothing with indexes from 0...begin. Emulate that those values are present in an array
-
-		uint64_t index2 = index - begin;
-		uint32_t segNo = (uint32_t)(index2 >> SEG_2POWER); // делим на SEGMENT_SIZE который есть 2^30
-		uint32_t offset = ((uint32_t)(index2) & OFFSET_MASK); // 0x3fffffff
+		uint64_t index2 = index - m_begin;
+		//uint64_t segNo = index2 >> SEG_2POWER; // делим на SEGMENT_SIZE который есть 2^30
+		//uint64_t offset = index2 & OFFSET_MASK; // 0x3fffffff
 		
-		pbitset pb = m_segments[segNo];
-		return pb->get(offset);
+		pbitset pb = m_segments[0/*segNo*/];
+		assert(pb != nullptr);
+
+#ifdef STD_BITSET
+		return pb->test(offset);
+#else
+		return pb->get(index2/*offset*/);
+#endif
 	}
 
-	uint64_t size() { return sz; }
+	uint64_t size() { return m_sz; }
 
-	//uint64_t capacity() { return cpacity; }
+	//uint64_t capacity() { return m_cpacity; }
 
 	//uint64_t segm() { return m_segments->size(); }
 

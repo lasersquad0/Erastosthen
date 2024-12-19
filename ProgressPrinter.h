@@ -41,7 +41,7 @@ public:
 		if (progress > m_current)
 		{
 			m_mutex.lock();
-			cout << "\rProgress ... " /* << setw(7) << setprecision(4) */ << (float)(100 * m_current) / (float)m_p100 << "%      ";
+			cout << "\rProgress ... " << (float)(100 * m_current) / (float)m_p100 << "%      ";
 			m_current += m_delta;
 			m_mutex.unlock();
 		}

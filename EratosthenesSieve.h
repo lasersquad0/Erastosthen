@@ -27,17 +27,19 @@ class EratosthenesSieve: public ProgressPrinter
 private:
 	friend void FindPrimesThread(EratosthenesSieve* es);
 
-	const string fSymbols = "BMGTP";
+	const string fSymbols = "BKMGTP";
 	static const uint64_t FACTOR_B  = 1ULL; // B means "bytes". so the factor = 1.
+	static const uint64_t FACTOR_K = 1'000ULL; // 'kilobytes'
 	static const uint64_t FACTOR_M  = 1'000'000ULL; // 'megabytes'
 	static const uint64_t FACTOR_G  = 1'000'000'000ULL; // 'gigabytes'
 	static const uint64_t FACTOR_T  = 1'000'000'000'000ULL; // terabytes
 	static const uint64_t FACTOR_P  = 1'000'000'000'000'000ULL; // petabytes
+	static const uint64_t MAX_START_K = 18400'000'000'000'000ULL; // 18400P
 	static const uint64_t MAX_START_M = 18400'000'000'000ULL; // 18400P
 	static const uint64_t MAX_START_G = 18400'000'000ULL; // 18400P
 	static const uint64_t MAX_START_T = 18400'000ULL; // 18400P
 	static const uint64_t MAX_START_P = 18400ULL; // 18400P
-	static const uint64_t MAX_LEN   = 1'000'000'000'000ULL; // terabyte
+	static const uint64_t MAX_LEN   = 1'000'000'000'000ULL; // terabyte (1T)
 
 	char symFACTORstart = 'G'; // символьное представление Factor дл€ значени€ m_realStart дл€ формировани€ имени output файла.
 	char symFACTORlen = 'G'; // символьное представление Factor дл€ значени€ m_realLength дл€ формировани€ имени output файла.
@@ -83,14 +85,14 @@ private:
 	void checkStartParam(string startValue);
 	void defineRanges();
 	rangeItem* getRange(uint64_t v);
-	void printTime(string msg);
+	void printTime(const string& msg);
 	string millisecToStr(long long ms);
 	uint64_t nextPrime();
 	void FindPrimesInThreads(int numThreads);
 
 public:
 	static const uint64_t DEFAULT_START = 20ULL * FACTOR_T; // это реальные primes откуда стартуем если не передано в параметрах command line
-	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // ƒлина промежутка на котором ищем простые. «десь всегда фиксирована (hardcoded)
+	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // длина промежутка на котором ищем простые если не передано в параметрах command line
 
 	EratosthenesSieve(bool mode, PRIMES_FILE_FORMATS oFileType, uint64_t strt, uint64_t len, string primesInputFile = Pre_Loaded_Primes_Filename);
 	EratosthenesSieve();
