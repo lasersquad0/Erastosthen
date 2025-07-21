@@ -43,7 +43,7 @@ To specify file format use predefined names: txt, txtdiff, bindiff, bindiffvar a
 
 ## Start and Length
 Second and third arguments define START and LENGTH range parameters for generating primes.
-You can use factor modificators (case insensitive) to make it more convenient to define range.
+You can use factor modificators (case insensitive) to make it more convenient to define range. <br>
 B - bytes
 
 K - kilobytes
