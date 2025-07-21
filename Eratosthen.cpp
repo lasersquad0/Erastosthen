@@ -18,7 +18,7 @@ struct MyGroupSeparator : numpunct<char>
     string do_grouping() const override { return "\3"; } // группировка по 3
 };
 
-void defineOptions(COptionsList& options)
+static void defineOptions(COptionsList& options)
 {
     options.AddOption("s", "simple", "generate primes using simple Eratosthenes sieve mode", 3);
     options.AddOption("o", "optimum", "generate primes using optimized Eratosthenes sieve mode", 3);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
             Parameters::THREADS = stoi(cmd.GetOptionValue("t"));
             if ( (Parameters::THREADS == 0) || (Parameters::THREADS > 25) )
             {
-                cout << "Number of threads is out of bounds (1...25)" << endl;
+                cout << "Number of threads is out of bounds (1...25). Using default value 1." << endl;
                 Parameters::THREADS = 1;
             }
         }
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
         }
         catch (...)
         {
-            printf("Some exception thrown.\n");
+            cout << "UNKNOWN exception has thrown" << endl;
             return 1;
         }
     }
