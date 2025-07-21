@@ -1,29 +1,29 @@
-# Eratosfen primes generating tool
-This is a tool that implements Eratosthen algorithm of generating prime numbers.
-This implementation is able to generate numbers in the range specified in command line.
+# Eratosthen primes generating tool
+This is a tool that implements optimized Eratosthen algorithm of generating prime numbers.
+This implementation generates prime numbers in a range specified in command line.
 
 ## Command line arguments
 ```
 Eratosthen usage:
--o, --optimum    <filetype> <start> <length> Generate primes using optimized Eratosthen sieve mode. Output file is stored in <filetype> format.
--s, --simple     <filetype> <start> <length> Generate primes using simple Eratosthen sieve mode. Output file is stored in <filetype> format.
--p, --primesfile <filename>                  File with primes to preload, if not specified this file 'primes - 0-1G.diffvar.bin' is used. File is looked in the same folder with Eratosthen.exe file.
--t, --threads    <threads>                   use specified number of threads during primes checking. If not specified, single thread used. 
--h, --help                                   show this help
+-o, --optimum    <outfiletype> <start> <length> Generates primes using optimized Eratosthen sieve mode. Output file is stored in <outfiletype> format (see below).
+-s, --simple     <outfiletype> <start> <length> Generates primes using simple Eratosthen sieve mode. Output file is stored in <outfiletype> format.
+-p, --primesfile <filename>                  File with primes to preload, if not specified then default file 'primes - 0-1G.diffvar.bin' is used. File is looked in the same folder with Eratosthen.exe file.
+-t, --threads    <threads>                   Use specified number of threads during primes checking. If not specified, single thread used. 
+-h, --help                                   Show this help
 ```
 Options 's' or 'o' are mandatory. All the others are optional.
-All three arguaments of options 's' and 'o' must be specified. There are no default values for these options.
+All three arguments of options 's' and 'o' must be specified. There are no default values for these options.
 
-## Generation modes
-There are two primes generating modes: simple ('s') and optimised ('o').
-Eratosthen algorythm requires much memory for execution.
-Optimised mode is an experimental, it requires two times less memory than simple mode.
+## Prime generating modes
+There are two primes generating modes: simple ('s') and optimized ('o').
+Eratosthen algorithm requires much memory for execution.
 Simple mode is a strainghtforward implementation of Eratosthen algorithm.
+Optimized mode requires about two times less memory than simple mode because it excludes even numbers consideration.
 Use symbol 's' to use simple mode of generation prime numbers.
 Use symbol 'o' to use optimised mode of generating primes.
 
 ## Output file type
-Generated primes numbers can be stored into file in 5 different formats. 
+Generated primes numbers can be stored into 5 different file formats. 
 Select file format that is appropriate for you.
 
 Supported formats: txt, txtdiff, bin, bindiff, bindiffvar.
@@ -39,12 +39,14 @@ In addition to above distance between two primes numbers is always even. So we c
 That idea allows us to create even more 'compressed' format of storing such numbers. **.bindiffvar** format uses 'variable length' coding to store difference between two consequitive primes numbers.
 it makes file with primes numbers 10 times smaller size than txt format.
 
-To specify file format use predefined names: txt, txtdiff, bindiff, bindiffvar as the first argument (filetype) of either 'o' or 's' option.
+To specify file format use predefined names: txt, txtdiff, bindiff, bindiffvar as the first argument (<outfiletype>) of 'o' and 's' options.
 
 ## Start and Length
 Second and third arguments define START and LENGTH range parameters for generating primes.
 You can use factor modificators (case insensitive) to make it more convenient to define range.
 B - bytes
+
+K - kilobytes
 
 M - megabytes
 
