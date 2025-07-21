@@ -1,14 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <bitset>
+//#include <vector>
+//#include <bitset>
 #include <stdexcept>
 #include <cassert>
-#include <mutex>
+//#include <mutex>
 #include <iostream>
-
-
-using namespace std;
 
 //template<uint64_t Bits>
 class MyBitset
@@ -18,6 +15,7 @@ private:
 	static const uint64_t BITS_IN_WORD = 1ULL << WORD_2POWER; //==sizeof(uint64_t)*8 = 64;
 	static const uint64_t WORD_MASK = BITS_IN_WORD - 1ULL; // =63=0x3F
 
+	uint64_t m_bits;
 	uint64_t* arr; // [(Bits - 1ULL) / BITS_IN_WORD + 1ULL] ;
 	
 //	bool get_bit(uint64_t word, uint32_t offset)
@@ -40,39 +38,90 @@ private:
 public:
 	MyBitset(uint64_t BitsCount) 
 	{ 
-		arr = new uint64_t[(BitsCount - 1ULL) / BITS_IN_WORD + 1ULL];
+		m_bits = BitsCount;
+		uint64_t wordsCnt = (BitsCount - 1ULL) / BITS_IN_WORD + 1ULL;
+		arr = (uint64_t*)calloc(wordsCnt, sizeof(uint64_t));
+		//arr = new uint64_t[wordsCnt];
+		//memset(arr, 0, wordsCnt);
 	}
 
 	~MyBitset()
 	{
-		delete[] arr;
+		//delete[] arr;
+		free(arr);
 	}
 
-	bool get(uint64_t index)
+	bool get(uint64_t bitIndex) const
 	{
-		uint64_t index2 = index >> WORD_2POWER; // index/BITS_IN_WORD;
-		uint64_t offset = index & WORD_MASK; // index % BITS_IN_WORD;
+		uint64_t index2 = bitIndex >> WORD_2POWER; // index/BITS_IN_WORD;
+		uint64_t offset = bitIndex & WORD_MASK; // index % BITS_IN_WORD;
 
 		return ((arr[index2] >> offset) & 0x01) == 1ULL;
 	}
 
-	void set(uint64_t index, bool value)
+	void set(uint64_t bitTndex, bool value)
 	{
 		assert(value); // only true is allowed
 
-		uint64_t index2 = index >> WORD_2POWER; // index/BITS_IN_WORD;
-		uint64_t offset = index & WORD_MASK; // index % BITS_IN_WORD;
+		uint64_t index2 = bitTndex >> WORD_2POWER; // index/BITS_IN_WORD;
+		uint64_t offset = bitTndex & WORD_MASK; // index % BITS_IN_WORD;
 
-		uint64_t mask = (uint64_t)value; // ? 0x01 : 0x00;
+		uint64_t mask = (uint32_t)value;// ? 0x01ULL : 0x00ULL;
 
-		arr[index2] |= (mask << offset); // не сработает правильно если ранее туда записана 1 и мы сейчас хотим записать 0.
+		arr[index2] |= (mask << offset); //TODO не сработает правильно если ранее туда записана 1 и мы сейчас хотим записать 0.
 		//arr[index2] = set_bit(arr[index2], offset, value);
-	}
-	 
+	} 
 };
 
-// TODO may be we dont need segmented array. Check if it is possible to index and allocate arrays greater than 4G in C++.
+// This array historically called segmented array just implements bitset with index shift.
+// It stores values with index m_begin to m_end and stores only (m_end - m_begin) values
 class SegmentedArray
+{
+private:
+	//typedef MyBitset mybitset_t;
+	//typedef mybitset_t* pbitset;
+
+	MyBitset* m_data;
+	uint64_t m_begin;
+	uint64_t m_size;
+	uint64_t m_end;
+
+public:
+	SegmentedArray(uint64_t start, uint64_t length)
+	{
+		m_data  = new MyBitset(length); // length is bits count here
+		m_begin = start;
+		m_size  = length;
+		m_end   = start + length;
+	}
+
+	~SegmentedArray()
+	{
+		delete m_data;
+	}
+
+	void set(uint64_t index, bool value)
+	{
+		assert(index >= m_begin);
+		assert(index < m_end);
+		uint64_t index2 = index - m_begin;
+		m_data->set(index2, value);
+	}
+
+	bool get(uint64_t index) const
+	{
+		assert(index >= m_begin);
+		assert(index < m_end);
+		uint64_t index2 = index - m_begin;
+		return m_data->get(index2);
+	}
+
+	uint64_t end() const { return m_end; }
+};
+
+
+// TODO may be we dont need segmented array. Check if it is possible to index and allocate arrays greater than 4G in C++.
+class SegmentedArrayOLD
 {
 private:
 	//static const uint64_t SEG_2POWER = 37ULL; // 128G maximum segment size to cover usual Length=100G //30;
@@ -97,15 +146,15 @@ private:
 #endif // MY_BITSET
 
 	typedef mybitset_t* pbitset;
-	pbitset* m_segments;
-
+	pbitset* m_segments; // NOTE, this is array of pointers to segments
+ 
 	uint64_t m_begin;
 	uint64_t m_cpacity;
-	uint64_t m_sz;
+	uint64_t m_end;
 	uint64_t m_numOfSeg;
 
 public:
-	SegmentedArray(uint64_t start, uint64_t length)
+	SegmentedArrayOLD(uint64_t start, uint64_t length)
 	{
 		m_numOfSeg = length / length;//SEGMENT_SIZE;
 		
@@ -113,7 +162,7 @@ public:
 		
 		if (remaining > 0) m_numOfSeg++;
 		
-		m_segments = new pbitset[m_numOfSeg];
+		m_segments = new pbitset[m_numOfSeg]; //array of pointers to segments
 
 		for (uint64_t i = 0; i < m_numOfSeg; ++i)
 		{
@@ -122,11 +171,11 @@ public:
 
 		m_begin = start;
 		m_cpacity = length;
-		m_sz = m_begin + m_cpacity;
+		m_end = m_begin + m_cpacity;
 	}
 
 
-	~SegmentedArray()
+	~SegmentedArrayOLD()
 	{
 		for (uint64_t i = 0; i < m_numOfSeg; ++i)
 		{
@@ -139,7 +188,7 @@ public:
 	void set(uint64_t index, bool value)
 	{
 #ifdef CHECK_ARRAY_BOUNDS
-		if (index >= m_sz) throw invalid_argument("Index out of bounds");
+		if (index >= m_end) throw invalid_argument("Index out of bounds");
 		if (index < m_begin) throw invalid_argument("Index out of bounds"); //return; //do nothing with indexes from 0...m_begin. Emulate that those values are present in an array
 #endif
 		uint64_t index2 = index - m_begin;
@@ -155,7 +204,7 @@ public:
 	bool get(uint64_t index)
 	{
 #ifdef CHECK_ARRAY_BOUNDS
-		if (index >= m_sz) throw invalid_argument("Index out of bounds");
+		if (index >= m_end) throw invalid_argument("Index out of bounds");
 		if (index < m_begin) throw invalid_argument("Index out of bounds");  //return false; //do nothing with indexes from 0...m_begin. Emulate that those values are present in an array
 #endif
 
@@ -173,7 +222,7 @@ public:
 #endif
 	}
 
-	uint64_t size() { return m_sz; }
+	uint64_t size() const { return m_cpacity; }
 
 	//uint64_t capacity() { return m_cpacity; }
 
