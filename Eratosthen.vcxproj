@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{1d9288b1-352a-4bc9-8a6a-60bd4f31433c}</ProjectGuid>
-    <RootNamespace>Erastofen</RootNamespace>
+    <RootNamespace>Eratosthen</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>Eratosthen</ProjectName>
   </PropertyGroup>
