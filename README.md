@@ -43,7 +43,7 @@ it makes file with primes numbers 10 times smaller size than txt format.
 
 To specify file format use predefined names: txt, txtdiff, bindiff, bindiffvar as the first argument (<outfiletype>) of ```-o```, ```-s```, ```-6```, and ```-30``` options.
 
-## Start and Length
+## Start and Length parameters
 Second and third arguments define START and LENGTH range parameters for generating primes.
 You can use factor modificators (case insensitive) to make it more convenient to define range. <br>
 B - bytes
