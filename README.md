@@ -13,7 +13,7 @@ Eratosthen usage:
 -t, --threads    <threads>                   Use specified number of threads during primes checking. If not specified, single thread used. 
 -h, --help                                   Show this help
 ```
-you should specify one of these options 's', 'o', '6', '30' to generate prime numbers. All other switches optional.
+You should specify one of these options 's', 'o', '6', '30' to generate prime numbers. All other switches optional.
 All three arguments of mandatory options must be specified. There are no default values for these options.
 
 ## Prime generating modes
