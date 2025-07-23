@@ -75,7 +75,7 @@ Specify option ```-t``` followed by number of threads you need.
 Number of threads can be between 1 and 24.
 Please note that three threads do not increase speed in three time because of synchronization expenses.
 
-```Eratosthen.exe``` uses pre-generated primes numbers for calculation other primes.
-Pregenerated primes numbers are stored in ```primes - 0-1G.diffvar.bin``` file that is used by default.
+```Eratosthen.exe``` uses pre-generated prime numbers for calculation other primes.
+Pre-generated prime numbers are stored in ```primes - 0-1G.diffvar.bin``` file that is used by default.
 If you would like to use another file with pre-generated prime numbers you can use option ```-p``` to tell ```Eratosthen.exe``` to read primes from that file.
 
