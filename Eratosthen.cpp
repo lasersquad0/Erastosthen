@@ -22,6 +22,8 @@ static void defineOptions(COptionsList& options)
 {
     options.AddOption("s", "simple", "generate primes using simple Eratosthenes sieve mode", 3);
     options.AddOption("o", "optimum", "generate primes using optimized Eratosthenes sieve mode", 3);
+    options.AddOption("6", "6n1", "generate primes using 6n1 Eratosthenes sieve mode", 3);
+    options.AddOption("30", "30nx", "generate primes using 30nx Eratosthenes sieve mode", 3);
     options.AddOption("p", "primesfile", string("file with primes to preload, if not specified '") + Pre_Loaded_Primes_Filename + "' file is used", 1);
     options.AddOption("t", "threads", "use specified number of threads during primes checking", 1);
     options.AddOption("h", "help", "show help", 0);
@@ -92,14 +94,14 @@ int main(int argc, char* argv[])
     }
 
   
-    if (cmd.HasOption("o") || cmd.HasOption("s"))
+    if (cmd.HasOption("o") || cmd.HasOption("s") || cmd.HasOption("6") || cmd.HasOption("30"))
     {
         try
         {
-            string opt = cmd.HasOption("o") ? "o" : "s";
+            string opt = cmd.HasOption("o") ? "o" : cmd.HasOption("s")? "s" : cmd.HasOption("6") ? "6": "30";
             
-            string ftype = cmd.GetOptionValue(opt, 0);
-            string start = cmd.GetOptionValue(opt, 1);
+            string ftype  = cmd.GetOptionValue(opt, 0);
+            string start  = cmd.GetOptionValue(opt, 1);
             string length = cmd.GetOptionValue(opt, 2);
 
             EratosthenesSieve sieve;

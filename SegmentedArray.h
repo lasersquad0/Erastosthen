@@ -51,7 +51,7 @@ public:
 		free(arr);
 	}
 
-	bool get(uint64_t bitIndex) const
+	inline bool get(uint64_t bitIndex) const
 	{
 		uint64_t index2 = bitIndex >> WORD_2POWER; // index/BITS_IN_WORD;
 		uint64_t offset = bitIndex & WORD_MASK; // index % BITS_IN_WORD;
@@ -59,16 +59,12 @@ public:
 		return ((arr[index2] >> offset) & 0x01) == 1ULL;
 	}
 
-	void set(uint64_t bitTndex, bool value)
+	inline void setTrue(uint64_t bitTndex)
 	{
-		assert(value); // only true is allowed
-
 		uint64_t index2 = bitTndex >> WORD_2POWER; // index/BITS_IN_WORD;
 		uint64_t offset = bitTndex & WORD_MASK; // index % BITS_IN_WORD;
 
-		uint64_t mask = (uint32_t)value;// ? 0x01ULL : 0x00ULL;
-
-		arr[index2] |= (mask << offset); //TODO не сработает правильно если ранее туда записана 1 и мы сейчас хотим записать 0.
+		arr[index2] |= (1ull << offset); //TODO не сработает правильно если ранее туда записана 1 и мы сейчас хотим записать 0.
 		//arr[index2] = set_bit(arr[index2], offset, value);
 	} 
 };
@@ -83,16 +79,17 @@ private:
 
 	MyBitset* m_data;
 	uint64_t m_begin;
-	uint64_t m_size;
+	//uint64_t m_size;
 	uint64_t m_end;
 
 public:
-	SegmentedArray(uint64_t start, uint64_t length)
+	SegmentedArray(uint64_t start, uint64_t end)
 	{
-		m_data  = new MyBitset(length); // length is bits count here
+		assert(end > start);
+		m_data  = new MyBitset(end - start); // length is bits count here
 		m_begin = start;
-		m_size  = length;
-		m_end   = start + length;
+		//m_size  = length;
+		m_end   = end;
 	}
 
 	~SegmentedArray()
@@ -100,15 +97,14 @@ public:
 		delete m_data;
 	}
 
-	void set(uint64_t index, bool value)
+	inline void setTrue(uint64_t index)
 	{
 		assert(index >= m_begin);
 		assert(index < m_end);
-		uint64_t index2 = index - m_begin;
-		m_data->set(index2, value);
+		m_data->setTrue(index - m_begin);
 	}
 
-	bool get(uint64_t index) const
+	inline bool get(uint64_t index) const
 	{
 		assert(index >= m_begin);
 		assert(index < m_end);
@@ -121,7 +117,7 @@ public:
 
 
 // TODO may be we dont need segmented array. Check if it is possible to index and allocate arrays greater than 4G in C++.
-class SegmentedArrayOLD
+/*class SegmentedArrayOLD
 {
 private:
 	//static const uint64_t SEG_2POWER = 37ULL; // 128G maximum segment size to cover usual Length=100G //30;
@@ -142,7 +138,7 @@ private:
 #endif // VECTOR_BOOL
 
 #ifdef MY_BITSET
-	typedef MyBitset/*<SEGMENT_SIZE>*/ mybitset_t;
+	typedef MyBitset mybitset_t;
 #endif // MY_BITSET
 
 	typedef mybitset_t* pbitset;
@@ -158,7 +154,7 @@ public:
 	{
 		m_numOfSeg = length / length;//SEGMENT_SIZE;
 		
-		uint64_t remaining = (length - (m_numOfSeg * length/*SEGMENT_SIZE*/));
+		uint64_t remaining = (length - (m_numOfSeg * length));
 		
 		if (remaining > 0) m_numOfSeg++;
 		
@@ -195,10 +191,10 @@ public:
 		//uint64_t segNo = index2 >> SEG_2POWER; // делим на SEGMENT_SIZE который есть 2^35 //30
 		//uint64_t offset = index2 & OFFSET_MASK; // 0x3fffffff(еще больше f здесь)
 
-		pbitset pb = m_segments[0/*segNo*/];
+		pbitset pb = m_segments[0/*segNo*//*];
 		assert(pb != nullptr);
 
-		pb->set(index2/*offset*/, value);
+		pb->set(index2/*offset*//*, value);
 	}
 
 	bool get(uint64_t index)
@@ -212,13 +208,13 @@ public:
 		//uint64_t segNo = index2 >> SEG_2POWER; // делим на SEGMENT_SIZE который есть 2^30
 		//uint64_t offset = index2 & OFFSET_MASK; // 0x3fffffff
 		
-		pbitset pb = m_segments[0/*segNo*/];
+		pbitset pb = m_segments[0/*segNo*//*];
 		assert(pb != nullptr);
 
 #ifdef STD_BITSET
 		return pb->test(offset);
 #else
-		return pb->get(index2/*offset*/);
+		return pb->get(index2/*offset*//*);
 #endif
 	}
 
@@ -228,5 +224,5 @@ public:
 
 	//uint64_t segm() { return m_segments->size(); }
 
-};
+};*/
 

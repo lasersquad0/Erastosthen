@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-//#include <windows.h>
+#include <functional>
 //#include <synchapi.h>
 #include "PrimesFIO.h"
 #include "SegmentedArray.h"
@@ -20,6 +20,9 @@ public:
 class EratosthenesSieve;
 void FindPrimesThread(EratosthenesSieve* es); // forward declaration
 
+enum class CALC_MODE { none, simple, optimized, n6n1, n30x };
+
+#define STR_TO_CALCMODE(arg) (arg=="S"?CALC_MODE::simple:arg=="O"?CALC_MODE::optimized:arg=="6"?CALC_MODE::n6n1: arg=="30"?CALC_MODE::n30x:CALC_MODE::none)
 
 class EratosthenesSieve: public ProgressPrinter
 {
@@ -45,9 +48,9 @@ private:
 
 	uint64_t FACTORstart = FACTOR_G; // G по умолчанию по потом перепишется исходя из переданного диапазона.
 	uint64_t FACTORlen = FACTOR_G;
-	bool OPTIMUM_MODE = true;
 	PRIMES_FILE_FORMATS OUTPUT_FILE_TYPE; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
-
+	
+	CALC_MODE m_mode;
 	uint64_t m_realStart;  
 	uint64_t m_realLength; // Длина промежутка на котором ищем простые
 	std::string m_primesInputFile;
@@ -64,17 +67,22 @@ private:
 	typedef std::pair<SyncType*, rangePair> rangeItem;
 	std::vector<rangeItem> m_ranges;
 
-	void CalculateOptimum();
 	void CalculateSimple();
+	void CalculateOptimum();
+	void Calculate6n1();
+	void Calculate30nx();
+
+	typedef std::function<uint64_t(const uint64_t index)> PrimeFromIndexPred;
 
 	uint64_t saveAsTXTSimpleMode(uint64_t START, SegmentedArray *sarr, std::string& outputFilename, bool diffMode);
-	uint64_t saveAsTXTOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
-	uint64_t saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
 	uint64_t saveAsBINSimpleMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, bool diffMode);
-	uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
-	uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
-	uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
 	uint64_t saveAsBINDiffVarSimpleMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
+
+	uint64_t saveAsTXTOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	uint64_t saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	//uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
 	uint32_t LoadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
 	uint32_t LoadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
